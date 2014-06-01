@@ -26,11 +26,17 @@ import javax.swing.ImageIcon;
 import edu.unt.cerl.replan.REPLAN;
 import edu.unt.cerl.replan.model.ScenarioState;
 import edu.unt.cerl.replan.model.UserState;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Map;
+import javax.swing.JComponent;
 
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.Envelope2D;
+import org.geotools.swing.MapPane;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.*;
 
@@ -70,34 +76,45 @@ public class CliffMapToolIrregular extends AbstractZoomTool {
     
     private Cursor cursor;
     
-    private final Point startPosDevice;
-    private final Point2D startPosWorld;
-    private final Point endPosDevice;
-    private final Point2D endPosWorld;
+    private final Point posDevice;
+    private final Point posDevicePrevious;
+    private final Point2D posWorld;
     private CliffCoordinateIrregular coord;
-    private boolean dragged;
+    private final JComponent parentComponent;
+    private Graphics2D graphics;
     
-    /**
+     /**
      * Constructor
      */
-    public CliffMapToolIrregular() {
+    public CliffMapToolIrregular(JComponent component) {
         Toolkit tk = Toolkit.getDefaultToolkit();
         ImageIcon imgIcon = new ImageIcon(getClass().getResource(CURSOR_IMAGE));
         cursor = tk.createCustomCursor(imgIcon.getImage(), CURSOR_HOTSPOT, TOOL_NAME);
         
-        startPosDevice = new Point();
-        startPosWorld = new DirectPosition2D();
-        endPosDevice = new Point();
-        endPosWorld = new DirectPosition2D();
-        dragged = false;
+        this.parentComponent=component;
+        posDevice = new Point();
+        posDevicePrevious = new Point();
+        posWorld = new DirectPosition2D();
+        
     }
     
     @Override
     public void onMouseClicked(MapMouseEvent e) {
-        startPosDevice.setLocation(e.getPoint());
-        startPosWorld.setLocation(e.getWorldPos());
-        if(e.getClickCount()>1)
-        System.out.println("X ="+startPosWorld.getX());
+        if(e.getClickCount()==1){
+        posDevicePrevious.setLocation(posDevice);
+        posDevice.setLocation(e.getPoint());
+        posWorld.setLocation(e.getWorldPos());
+        
+        ensureGraphics();
+        
+        if(posDevicePrevious.x !=0){
+         graphics.drawLine(posDevicePrevious.x, posDevicePrevious.y, posDevice.x, posDevice.y);
+          }
+        }
+                
+        if(e.getClickCount()>1){
+        
+        }
     }
     
     /**
@@ -108,8 +125,7 @@ public class CliffMapToolIrregular extends AbstractZoomTool {
      */
     @Override
     public void onMousePressed(MapMouseEvent ev) {
-        startPosDevice.setLocation(ev.getPoint());
-        startPosWorld.setLocation(ev.getWorldPos());
+        
     }
 
     /**
@@ -119,7 +135,7 @@ public class CliffMapToolIrregular extends AbstractZoomTool {
      */
     @Override
     public void onMouseDragged(MapMouseEvent ev) {
-        dragged = true;
+       
     }
 
     /**
@@ -131,26 +147,10 @@ public class CliffMapToolIrregular extends AbstractZoomTool {
      */
     @Override
     public void onMouseReleased(MapMouseEvent ev) {
-        if (dragged && !ev.getPoint().equals(startPosDevice)) {
-            Envelope2D env = new Envelope2D();
-            env.setFrameFromDiagonal(startPosWorld, ev.getWorldPos());
-            this.endPosWorld.setLocation(ev.getWorldPos());
-            this.endPosDevice.setLocation(ev.getPoint());
-            dragged = false;
-            this.coord=new CliffCoordinateIrregular(startPosWorld.getX(),startPosWorld.getY(), endPosWorld.getX(), endPosWorld.getY());
-           
-            //Insert cliff coordinate to cliffed_geographies table
-              //System.out.println("Check -1");
-            //REPLAN.getQueries().updateCliffedGeographies(this.coord);
-           // this.cliffGeography();
-           // REPLAN.getMainFrame().getTabs().getSelectedScenario().reRender();
-            //getMapPane().setDisplayArea(env);
-            
-            
-           }
+       
     }
 
-    private void cliffGeography(){
+    private void cliffGeographyIrregular(){
         
          String id = UserState.userId;
          ScenarioState state = REPLAN.getMainFrame().getTabs().getSelectedScenario().getState();
@@ -178,10 +178,22 @@ public class CliffMapToolIrregular extends AbstractZoomTool {
      */
     @Override
     public boolean drawDragBox() {
-        return true;
+        return false;
     }
     
     public CliffCoordinateIrregular getCliffCoordinate(){
      return this.coord;
+    }
+    
+    /**
+     * Creates and initializes the graphics object if required.
+     */
+    private void ensureGraphics() {
+        if (graphics == null) {
+            graphics = (Graphics2D) parentComponent.getGraphics().create();
+            graphics.setColor(Color.WHITE);
+            graphics.setXORMode(Color.BLUE);
+            graphics.setStroke(new BasicStroke(3));
+        }
     }
 }

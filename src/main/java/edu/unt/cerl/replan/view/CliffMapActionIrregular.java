@@ -26,6 +26,7 @@ package edu.unt.cerl.replan.view;
 
 
 import java.awt.event.ActionEvent;
+import javax.swing.JComponent;
 
 import org.geotools.swing.MapPane;
 import org.geotools.swing.action.*;
@@ -73,8 +74,9 @@ public class CliffMapActionIrregular extends MapAction {
      *
      * @param ev the event (not used)
      */
+    @Override
     public void actionPerformed(ActionEvent ev) {
-        getMapPane().setCursorTool(new CliffMapToolIrregular());
+        getMapPane().setCursorTool(new CliffMapToolIrregular((JComponent)getMapPane()));
          System.out.println("Cursor Tool = "+getMapPane().getCursorTool().getClass());
         
           
