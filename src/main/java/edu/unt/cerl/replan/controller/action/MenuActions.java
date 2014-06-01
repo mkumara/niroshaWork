@@ -1,0 +1,438 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+//Copied from old CVS by Sarat
+package edu.unt.cerl.replan.controller.action;
+
+import edu.unt.cerl.applicationframework.model.DefaultConstants;
+import edu.unt.cerl.replan.REPLAN;
+import edu.unt.cerl.replan.model.ScenarioState;
+import edu.unt.cerl.replan.model.UserState;
+import edu.unt.cerl.replan.view.mainframe.ScenarioPanel;
+import edu.unt.cerl.replan.view.windows.SaveAsFrame;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JCheckBox;
+import javax.swing.JOptionPane;
+
+/**
+ *
+ * @author Tamara Schneider <tschneider@unt.edu>
+ */
+public class MenuActions {
+
+    public static void quitAction() {
+        int r = JOptionPane.showConfirmDialog(REPLAN.getMainFrame(),
+                "Are you sure you want to exit RE-PLAN?", "Exit RE-PLAN?",
+                JOptionPane.YES_NO_OPTION);
+        if (r == JOptionPane.YES_OPTION) {
+            System.out.println("closing");
+
+            // Before closing, get all unsaved tabs and ask user which ones to first save
+            String[] currentNames = REPLAN.getMainFrame().getTabs().findAllUnsavedScenarios();
+
+            // get total count of unsaved tabs/names only
+            int count = 0;
+            for (int i = 0; i < currentNames.length; i++) {
+                if (currentNames[i] != null) {
+                    count++;
+                }
+            }
+
+            // if there are any tabs that are not yet saved 
+            if (count > 0) {
+
+                ScenarioState saveState = null;
+                // build check list with tab names to ask user if they want to save anything 
+                // still unsaved before closing
+                JCheckBox[] unsavedTabs = new JCheckBox[count];
+                for (int i = 0; i < count; i++) {
+                    unsavedTabs[i] = new JCheckBox();
+                    unsavedTabs[i].setText(currentNames[i]);
+                }
+                // create the form to show
+                Object[] form = {
+                    "Some scenarios have NOT been saved yet.\nSelect the ones you want to save before closing:",
+                    "\n",
+                    unsavedTabs
+                };
+
+                // show the form
+                int option = JOptionPane.showConfirmDialog(null, form, "Save", JOptionPane.PLAIN_MESSAGE);
+                if (option == JOptionPane.OK_OPTION) {
+                    // check for scenarios to save
+                    for (int i = 0; i < count; i++) {
+                        // if a checkbox is checked
+                        if (unsavedTabs[i].isSelected()) {
+                            // find the scenario in the tabs with the name selected
+                            saveState = REPLAN.getMainFrame().getTabs().findSelectedScenario(unsavedTabs[i].getText());
+                            // save the selected scenario tab
+                            MenuActions.saveSelectedScenarioBeforeClose(saveState);
+                        }
+                    }
+                }
+            }
+            try {
+                //deleteWorkingCopies(REPLAN.getMainFrame().getTabs().getSelectedScenario().getState());
+                REPLAN.getMainFrame().getTabs().cleanUpAllTabs();
+            } catch (NullPointerException e) {
+                System.out.println("Nothing to delete \n");
+            }
+
+            System.exit(0);
+        } else {
+            REPLAN.getMainFrame().setVisible(true);
+        }
+    }
+
+    /**
+     * Save the selected tab that the use has chosen before closing the main
+     * frame. This method is similar to the "saveScenario" method but is called
+     * when use is closing the main frame of RE-PLAN and still has some
+     * scenario's unsaved that are needing to be saved.
+     */
+    public static void saveSelectedScenarioBeforeClose(ScenarioState save) {
+
+        MenuActions.saveTables(save);
+        REPLAN.getQueries().saveScenarioInformation(save, REPLAN.getController().getConnection());
+        /*
+         * if there is no timestamp, create it
+         */
+        if (!REPLAN.getQueries().entryExists("public",
+                "workingcpy_timestamps", "author", UserState.userId, "name", save.getWorkingCopyName(), REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().insertTimestamp(UserState.userId, save.getWorkingCopyName(), REPLAN.getController().
+                    getConnection());
+        }
+        save.setScenarioSavedState(true);
+    }
+
+    public static void loadScenario() {
+//            if (e.getActionCommand().equals("load")) {
+//                ScenarioLoader l = new ScenarioLoader(owner);
+//                l.setVisible(true);
+    }
+
+    public static void saveScenario() {
+        ScenarioState state = REPLAN.getMainFrame().getTabs().
+                getSelectedScenario().getState();
+
+        System.out.println("MenuActions: Saving Scenario...");
+        /*
+         * If scenario has not been saved under that name, an entry is added to
+         * the scnearios table
+         */
+        if (state.isNewScenario()) {
+//            REPLAN.getQueries().insertValuesIntoTable("public", "scenarios", state.getValues(), REPLAN.getController().getConnection());
+//            REPLAN.getQueries().saveScenarioInformation(state, REPLAN.getController().getConnection());
+            state.setIsNew(false);
+            state.setScenarioSavedState(true);
+            REPLAN.getMainFrame().getTabs().changeTabToRepresentSavedState(state.isScenarioSaved());
+            MenuActions.saveTables(state);
+            REPLAN.getQueries().saveScenarioInformation(state, REPLAN.getController().getConnection());
+            /*
+             * if there is no timestamp, create it
+             */
+            if (!REPLAN.getQueries().entryExists("public",
+                    "workingcpy_timestamps", "author", UserState.userId, "name", state.getWorkingCopyName(), REPLAN.getController().getConnection())) {
+                REPLAN.getQueries().insertTimestamp(UserState.userId, state.getWorkingCopyName(), REPLAN.getController().
+                        getConnection());
+            }
+
+        } else {
+            String message
+                    = "Are you sure you want to override current scenario?";
+
+            Object[] options = {"Yes - Override Current", "No - Save As New"};
+
+            int r = JOptionPane.showOptionDialog(REPLAN.getMainFrame(), message, "Save", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, null);
+
+            if (r == JOptionPane.YES_OPTION) {
+                //MenuActions.deleteTables(state);  /*This ststement causes workign copies to be deleted, leading to table not found exception*/
+                //Make Sure: the statement below adds a new row to the table scenarios.. maybe we should do an update instead of inserting a new row
+//                REPLAN.getQueries().insertValuesIntoTable("public",
+//                        "scenarios", state.getValues(), REPLAN.getController().
+//                        getConnection());
+//                REPLAN.getQueries().saveScenarioInformation(state, REPLAN.getController().getConnection());
+                //MenuActions.deleteTables(state);
+                REPLAN.getQueries().updateScenarioInformation(state, REPLAN.getController().getConnection());
+                MenuActions.saveTables(state);
+                state.setScenarioSavedState(true);
+                // If saving, delete the '*' from the tab name if it exists
+                REPLAN.getMainFrame().getTabs().changeTabToRepresentSavedState(state.isScenarioSaved());
+            } else if (r == JOptionPane.NO_OPTION) { // save as option chosen
+                new SaveAsFrame(REPLAN.getMainFrame().getREPLANMenuBar().getOwner());
+
+            }
+
+        }
+    }
+
+    private static void saveTables(ScenarioState state) {
+        String schema = UserState.userId;
+        String wcpy = state.getWorkingCopyName();
+        String name = state.getName();
+        Connection c = REPLAN.getController().getConnection();
+        String[] geos = state.getGeographies();
+        Map<String, Map> map = REPLAN.getDatasets();
+
+        System.out.println("MenuActions: pods selected? " + state.arePodsSelected());
+        System.out.println("MenuActions: re-plan executed? " + state.isTrafficAnalysisPerformed());
+        // Save the geographies table
+        if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.GEOGRAPHIES_SUFFIX, c)) {
+            REPLAN.getQueries().dropTable(schema, name + DefaultConstants.GEOGRAPHIES_SUFFIX, c);
+        }
+        REPLAN.getQueries().saveTableAs(schema, wcpy
+                + DefaultConstants.GEOGRAPHIES_SUFFIX, schema, name
+                + DefaultConstants.GEOGRAPHIES_SUFFIX, c);
+        
+        // Save the cliffed_geographies table
+        if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c)) {
+            REPLAN.getQueries().dropTable(schema, name + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c);
+        }
+        REPLAN.getQueries().saveTableAs(schema, wcpy
+                + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, schema, name
+                + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c);
+        
+        if (state.arePodsSelected()) {
+            if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.POD_SUFFIX, c)) {
+                REPLAN.getQueries().dropTable(schema, name + DefaultConstants.POD_SUFFIX, c);
+            }
+            REPLAN.getQueries().saveTableAs(schema, wcpy
+                    + DefaultConstants.POD_SUFFIX, schema, name
+                    + DefaultConstants.POD_SUFFIX, c);
+            if (state.getCatchmentAreasGiven()) {
+                if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.CATCHMENT_SUFFIX, c)) {
+                    REPLAN.getQueries().dropTable(schema, name + DefaultConstants.CATCHMENT_SUFFIX, c);
+                }
+                if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.B2P_SUFFIX, c)) {
+                    REPLAN.getQueries().dropTable(schema, name + DefaultConstants.B2P_SUFFIX, c);
+                }
+                REPLAN.getQueries().saveTableAs(schema, wcpy
+                        + DefaultConstants.CATCHMENT_SUFFIX, schema, name
+                        + DefaultConstants.CATCHMENT_SUFFIX, c);
+                REPLAN.getQueries().saveTableAs(schema, wcpy
+                        + DefaultConstants.B2P_SUFFIX, schema, name
+                        + DefaultConstants.B2P_SUFFIX, c);
+
+                if (state.isType2VulnAnalysisPerformed()) {
+                    if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.TYPE2_VULN_CLASSES, c)) {
+                        REPLAN.getQueries().dropTable(schema, name + DefaultConstants.TYPE2_VULN_CLASSES, c);
+                    }
+                    REPLAN.getQueries().saveTableAs(schema, wcpy
+                            + DefaultConstants.TYPE2_VULN_CLASSES, schema, name
+                            + DefaultConstants.TYPE2_VULN_CLASSES, c);
+                }
+            }
+
+            if (state.isTrafficAnalysisPerformed()) {
+                if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.CROSSINGPT_SUFFIX, c)) {
+                    REPLAN.getQueries().dropTable(schema, name + DefaultConstants.CROSSINGPT_SUFFIX, c);
+                }
+                if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.RINGS_SUFFIX, c)) {
+                    REPLAN.getQueries().dropTable(schema, name + DefaultConstants.RINGS_SUFFIX, c);
+                }
+
+                REPLAN.getQueries().saveTableAs(schema, wcpy
+                        + DefaultConstants.CROSSINGPT_SUFFIX, schema, name
+                        + DefaultConstants.CROSSINGPT_SUFFIX, c);
+                REPLAN.getQueries().saveTableAs(schema, wcpy
+                        + DefaultConstants.RINGS_SUFFIX, schema, name
+                        + DefaultConstants.RINGS_SUFFIX, c);
+
+            }
+
+            if (state.isCoverageAnalysisPerformed()) {
+                if (REPLAN.getQueries().tableExists(schema, name + DefaultConstants.COVERAGE_SUFFIX, c)) {
+                    REPLAN.getQueries().dropTable(schema, name + DefaultConstants.COVERAGE_SUFFIX, c);
+                }
+
+                REPLAN.getQueries().saveTableAs(schema, wcpy
+                        + DefaultConstants.COVERAGE_SUFFIX, schema, name
+                        + DefaultConstants.COVERAGE_SUFFIX, c);
+
+            }
+        }
+//        if (state.isNewScenario()) {
+//            REPLAN.getQueries().saveScenarioInformation(state, c);
+//            state.setIsNew(false);
+//        }
+    }
+
+    private static void deleteWorkingCopies(
+            ScenarioState state) {
+        String schema = UserState.userId;
+        String wcpy = state.getWorkingCopyName();
+        //String wcpy = state.getName();
+        Connection c = REPLAN.getController().getConnection();
+        String[] tables = {
+            wcpy + DefaultConstants.GEOGRAPHIES_SUFFIX,
+            wcpy + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX,
+            wcpy + DefaultConstants.POD_SUFFIX,
+            wcpy + DefaultConstants.CATCHMENT_SUFFIX,
+            wcpy + DefaultConstants.COVERAGE_SUFFIX,
+            wcpy + DefaultConstants.CROSSINGPT_SUFFIX,
+            wcpy + DefaultConstants.RINGS_SUFFIX,
+            wcpy + DefaultConstants.B2P_SUFFIX,
+            wcpy + DefaultConstants.BLOCK_SUFFIX,
+            wcpy + DefaultConstants.CENTROID_SUFFIX,
+            wcpy + DefaultConstants.ROAD_SUFFIX,
+            wcpy + DefaultConstants.POPULATION_SUFFIX,
+            wcpy + DefaultConstants.OUTLINE_SUFFIX,
+            wcpy + DefaultConstants.TYPE2_VULN_CLASSES,
+            wcpy + DefaultConstants.SPANISH_SUFFIX
+        };
+        for (int i = 0; i < tables.length; i++) {
+            if (REPLAN.getQueries().tableExists(schema, tables[i], c)) {
+                REPLAN.getQueries().dropTable(schema, tables[i], c);
+            }
+        }
+        REPLAN.getQueries().removeTimestamp(UserState.userId, state.getWorkingCopyName(), REPLAN.getController().getConnection());
+    }
+
+//    private static void deleteTables(
+//            ScenarioState state) {
+//        String schema = UserState.userId;
+//        //String wcpy = state.getWorkingCopyName();
+//        String wcpy = state.getName();
+//        Connection c = REPLAN.getController().getConnection();
+//        String[] tables = {
+//            wcpy + DefaultConstants.GEOGRAPHIES_SUFFIX,
+//            wcpy + DefaultConstants.POD_SUFFIX,
+//            wcpy + DefaultConstants.CATCHMENT_SUFFIX,
+//            wcpy + DefaultConstants.COVERAGE_SUFFIX,
+//            wcpy + DefaultConstants.CROSSINGPT_SUFFIX,
+//            wcpy + DefaultConstants.RINGS_SUFFIX,
+//            wcpy + DefaultConstants.B2P_SUFFIX
+//        };
+//        for (int i = 0; i < tables.length; i++) {
+//            if (REPLAN.getQueries().tableExists(schema, tables[i], c)) {
+//                REPLAN.getQueries().dropTable(schema, tables[i], c);
+//            }
+//        }
+//    }
+    public static void saveScenarioAs(String newName, boolean keepBothTabsOpen) {
+        ScenarioState state = REPLAN.getMainFrame().getTabs().
+                getSelectedScenario().getState();
+
+        String oldName = state.getName();
+        String oldWcpyName = state.getWorkingCopyName();
+        state.setName(newName);
+        String name = state.getName();
+        String schema = UserState.userId;
+
+        Connection c = REPLAN.getController().getConnection();
+        String[] geos = state.getGeographies();
+        Map<String, Map> map = REPLAN.getDatasets();
+
+        if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.GEOGRAPHIES_SUFFIX, c)) {
+            REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                    + DefaultConstants.GEOGRAPHIES_SUFFIX, schema, name
+                    + DefaultConstants.GEOGRAPHIES_SUFFIX, c);
+        }
+
+        if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c)) {
+            REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                    + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, schema, name
+                    + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c);
+        }
+
+        if (state.arePodsSelected()) {
+            if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.POD_SUFFIX, c)) {
+                REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                        + DefaultConstants.POD_SUFFIX, schema, name
+                        + DefaultConstants.POD_SUFFIX, c);
+            }
+
+            if (state.getCatchmentAreasGiven()) {
+                if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.CATCHMENT_SUFFIX, c)) {
+                    REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                            + DefaultConstants.CATCHMENT_SUFFIX, schema, name
+                            + DefaultConstants.CATCHMENT_SUFFIX, c);
+                }
+
+                if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.B2P_SUFFIX, c)) {
+                    REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                            + DefaultConstants.B2P_SUFFIX, schema, name
+                            + DefaultConstants.B2P_SUFFIX, c);
+                }
+
+                if (state.isType2VulnAnalysisPerformed()) {
+                    if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.TYPE2_VULN_CLASSES, c)) {
+                        REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                                + DefaultConstants.TYPE2_VULN_CLASSES, schema, name
+                                + DefaultConstants.TYPE2_VULN_CLASSES, c);
+                    }
+
+                }
+
+            }
+
+            if (state.isTrafficAnalysisPerformed()) {
+
+                if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.CROSSINGPT_SUFFIX, c)) {
+                    REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                            + DefaultConstants.CROSSINGPT_SUFFIX, schema, name
+                            + DefaultConstants.CROSSINGPT_SUFFIX, c);
+                }
+                if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.RINGS_SUFFIX, c)) {
+                    REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                            + DefaultConstants.RINGS_SUFFIX, schema, name
+                            + DefaultConstants.RINGS_SUFFIX, c);
+                }
+
+            }
+
+            if (state.isCoverageAnalysisPerformed()) {
+                if (REPLAN.getQueries().tableExists(schema, oldWcpyName + DefaultConstants.COVERAGE_SUFFIX, c)) {
+                    REPLAN.getQueries().saveTableAs(schema, oldWcpyName
+                            + DefaultConstants.COVERAGE_SUFFIX, schema, name
+                            + DefaultConstants.COVERAGE_SUFFIX, c);
+                }
+            }
+        }
+
+        REPLAN.getQueries().saveScenarioInformation(state, c);
+//        REPLAN.getQueries().insertValuesIntoTable("public",
+//                "scenarios", state.getValues(), REPLAN.getController().
+//                getConnection());
+        state.setName(oldName);
+        //REPLAN.getQueries().insertTimestamp(schema, name, c);
+        //REPLAN.getQueries().removeTimestamp(schema, oldWcpyName, c);
+
+        // Show the correct scenarios based on the user's decision in the form
+        // if the user wants both tabs to stay open
+        if (keepBothTabsOpen) {
+
+            String author = state.getAuthor();
+
+            LoadScenarioListener temp = new LoadScenarioListener();
+            try {
+                temp.loadScenarioEventPerformed(new LoadScenarioEvent(REPLAN.getMainFrame().getREPLANMenuBar().getOwner(), author, newName));
+            } catch (SQLException ex) {
+                Logger.getLogger(MenuActions.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } // if the user only wants to view the newly saved-as tab
+        else {
+            // create a temp var to represent the tab to be closed 
+            ScenarioPanel closeThisOne = REPLAN.getMainFrame().getTabs().getSelectedScenario();
+
+            // load the new one
+            String author = state.getAuthor();
+            LoadScenarioListener temp = new LoadScenarioListener();
+            try {
+                temp.loadScenarioEventPerformed(new LoadScenarioEvent(REPLAN.getMainFrame().getREPLANMenuBar().getOwner(), author, newName));
+            } catch (SQLException ex) {
+                Logger.getLogger(MenuActions.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            // close old tab (without saving)\
+            REPLAN.getMainFrame().getTabs().cleanUpTab(closeThisOne.tab_button.getCurrentIndexOfTab());
+            REPLAN.getMainFrame().getTabs().remove(closeThisOne.tab_button.getCurrentIndexOfTab());
+        }
+
+    }
+}

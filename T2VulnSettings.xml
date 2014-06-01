@@ -1,0 +1,38 @@
+#Type 2 Vulnerability Settings
+
+<Vulnerabilities>
+	<Vulnerability>
+		<Name>Language-Spanish</Name>
+		<Resource>
+			<Res-Name>Translators</Res-Name>
+			<Res-Type>Movable</Res-Type>
+			<Service-Capacity>500</Service-Capacity>
+		</Resource>
+		<Table>tarrant_bg_acs_08_12_language</Table>
+		<Columns>
+			<Query>b16004_008e + B16004_009e + B16004_030e + B16004_031e + B16004_052e + B16004_053e</Query>
+		</Columns>			
+	</Vulnerability>
+		<Vulnerability>
+		<Name>Language-Other Indo-European</Name>
+		<Resource>
+			<Res-Name>Translators</Res-Name>
+			<Res-Type>Movable</Res-Type>
+		</Resource>
+		<Table>tarrant_bg_acs_08_12_language</Table>
+		<Columns>
+			<Query>b16004_013e + B16004_014e + B16004_035e + B16004_036e + B16004_057e + B16004_058e</Query>
+		</Columns>			
+	</Vulnerability>
+	<Vulnerability>
+		<Name>Language-Asian and Pacific Island</Name>
+		<Resource>
+			<Res-Name>Translators</Res-Name>
+			<Res-Type>Movable</Res-Type>
+		</Resource>
+		<Table>tarrant_bg_acs_08_12_language</Table>
+		<Columns>
+			<Query>b16004_018e + B16004_019e + B16004_040e + B16004_041e + B16004_062e + B16004_063e</Query>
+		</Columns>			
+	</Vulnerability>		
+</Vulnerabilities>

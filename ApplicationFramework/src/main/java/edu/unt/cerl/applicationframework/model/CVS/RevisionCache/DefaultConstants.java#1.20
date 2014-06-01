@@ -1,0 +1,75 @@
+package edu.unt.cerl.applicationframework.model;
+
+/**
+ *
+ * @author Tamara Schneider <tschneider@unt.edu>
+ */
+public class DefaultConstants {
+
+    /**
+     * suffix
+     */
+    public static final String B2P_SUFFIX = "_block_to_pods";
+    public static final String BLOCK2POD_SUFFIX = B2P_SUFFIX; // This needs to go away. Use B2P_SUFFIX instead!
+    public static final String BLOCK_SUFFIX = "_census_blocks";
+    public static final String CATCHMENT_SUFFIX = "_catchment";
+    public static final String CENTROID_SUFFIX = "_census_blocks_centroids";
+    public static final String COVERAGE_SUFFIX = "_coverage";
+    public static final String COVERAGE_SEQ_SUFFIX = COVERAGE_SUFFIX + "_seq";
+    public static final String CROSSINGPT_SUFFIX = "_crossingpoints";
+    public static final String CROSSINGPT_SEQ_SUFFIX = CROSSINGPT_SUFFIX + "_seq";
+    public static final String GEOGRAPHIES_SUFFIX = "_geographies";
+    public static final String OUTLINE_SUFFIX = "_shp";
+    public static final String POD_SUFFIX = "_pods";
+    public static final String POPULATION_SUFFIX = "_population";
+    public static final String RINGS_SUFFIX = "_rings";
+    public static final String RINGS_SEQ_SUFFIX = RINGS_SUFFIX + "_seq";
+    public static final String ROAD_SUFFIX = "_roads";
+    // The following were added by Marty for Trans Vuln Research:
+    public static final String COVERAGE_AREA_WO_TRANS_SUFFIX = "_coverage_wo_trans";
+    public static final String VULN_AFTER_COVERAGE_AREA_WO_TRANS_SUFFIX = "vuln_after_coverage_wo_trans";
+    public static final String COVERAGE_AREA_WO_TRANS_DISPLAY_SUFFIX = "_coverage_wo_trans_display";
+    public static final String VULN_AFTER_COVERAGE_AREA_WO_TRANS_DISPLAY_SUFFIX = "vuln_after_coverage_wo_trans_display";
+    public static final String COVERAGE_AREA_BUFFER_WO_TRANS_DISPLAY_SUFFIX = "_coverage_buffer_wo_trans_display";
+    //public static final String VULN_AFTER_COVERAGE_AREA_BUFFER_WO_TRANS_DISPLAY_SUFFIX = "vuln_after_coverage_buffer_wo_trans_display";
+    public static final String COVERAGE_AREA_W_TRANS_SUFFIX = "_coverage_w_trans";
+    public static final String VULN_AFTER_COVERAGE_AREA_W_TRANS_SUFFIX = "vuln_after_coverage_w_trans";
+    public static final String COVERAGE_AREA_W_TRANS_DISPLAY_SUFFIX = "_coverage_w_trans_display";
+    public static final String VULN_AFTER_COVERAGE_AREA_W_TRANS_DISPLAY_SUFFIX = "vuln_after_coverage_w_trans_display";
+    public static final String COVERAGE_AREA_BUFFER_W_TRANS_DISPLAY_SUFFIX = "_coverage_buffer_w_trans_display";
+    //public static final String VULN_AFTER_COVERAGE_AREA_BUFFER_W_TRANS_DISPLAY_SUFFIX = "vuln_after_coverage_buffer_w_trans_display";
+    public static final String GTFS_STOPS_SUFFIX = "_gtfs_stops";
+    public static final String REACH_COMPARISONS = "_reach_comparisons";
+    //Added for research on Type 2 vulnerabilities
+    public static final String SPANISH_SUFFIX = "_vulnerable_spanish";
+    public static final String TYPE2_VULN_CLASSES = "_type2_vulnclasses";
+    public static final String TYPE2_ALLOC_CLASSES = "_type2_allocclasses";
+    
+    
+    
+    /**
+     * table types
+     */
+    public static final String SCHEMA = "schema";
+    public static final String NUM_PODS = "num_pods";
+    public static final String B2P_TABLE = "block_to_pods";
+    public static final String BLOCK_TABLE = "block_table";
+    public static final String CENTROID_TABLE = "centroid_table";
+    public static final String COVERAGE_TABLE = "coverage_table";
+    public static final String OUTLINE_TABLE = "outline_table";
+    public static final String POD_TABLE = "pods_table";
+    public static final String POPULATION_TABLE = "population_table";
+    public static final String ROAD_TABLE = "road_table";
+    public static final String TRAFFIC_COUNTS_TABLE = "traffic_counts";
+    public static final String TRAFFIC_COUNTS_ALL_TABLE = "traffic_counts_all";
+    public static final String TRAFFIC_COUNTS_JOIN_TABLE = "traffic_counts_join";
+    /**
+     * fields
+     */
+    public static final String BLOCK_ID_FIELD = "block_id";
+    public static final String COVERAGE = "Coverage";
+    public static final String ID_FIELD = "id";
+    public static final String GEOM_FIELD = "the_geom";
+    public static final String NAME = "name";
+    public static final String POLULATION_FIELD = "population";
+}

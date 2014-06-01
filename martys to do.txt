@@ -1,0 +1,5 @@
+Notes on what needs to be done next on RE-PLAN2:
+
+- Update DB to reflect changes to PODs
+- complete oberserver/observable message passing etc
+- write POD Editor controller

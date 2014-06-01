@@ -1,0 +1,19 @@
+% Settings for the database
+
+% The host without backslashes e.g. example.domain.com
+host = cerl-db.cse.unt.edu
+port = 5432
+
+% The user must have admin rights for the database. This often can be easily achieved
+% by creating a database for the user bearing the name of the user
+% Assign a role with necessary rights, otherwise the system name is used, which can
+% cause complications
+database = replan2
+user = cerl_db_user
+role = cerl_db_user
+password = nih_replan2_db_cerl
+
+% After which time are temporary tables to be discarded (in hours)?
+discard_after = 24
+
+

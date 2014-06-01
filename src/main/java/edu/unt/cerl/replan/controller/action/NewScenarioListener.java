@@ -1,0 +1,80 @@
+package edu.unt.cerl.replan.controller.action;
+
+import java.sql.SQLException;
+import java.util.Map;
+import edu.unt.cerl.replan.REPLAN;
+import edu.unt.cerl.replan.model.ScenarioState;
+import edu.unt.cerl.replan.model.UserState;
+import java.util.EventListener;
+import edu.unt.cerl.applicationframework.model.DefaultConstants;
+import java.sql.Connection;
+
+/**
+ * 
+ * This class controls the creation of a new scenario.
+ *
+ * @author Tamara Schneider
+ *
+ */
+public class NewScenarioListener implements EventListener {
+
+    /**
+     * This methods creates a new scenario based on the parameters provided
+     * by the NewScenarioEvent.
+     * @param e NewScenarioEvent that contains information about the scenario
+     * to be created.
+     */
+    private ScenarioState state;
+
+    public void newScenarioEventPerformed(NewScenarioEvent e) throws
+            SQLException {
+
+        // create a new state for the new scenario
+       this.state = new ScenarioState(e.getName(), UserState.userId,
+                e.getDescription(), true, e.getGeographies(), e.gettimePerIndividual());
+
+        // create the tables based on selected geographies
+        this.createGeography(state.getGeographies(), state.getWorkingCopyName());
+
+        // create a new scenario tab
+        REPLAN.getMainFrame().getTabs().createNewScenario(state);
+        REPLAN.getMainFrame().getREPLANMenuBar().reAdjustToolsMenu();
+        
+        // put an '*' by the name in the tab to show its not yet saved
+        REPLAN.getMainFrame().getTabs().changeTabToRepresentSavedState(false);
+    }
+
+    public ScenarioState getScenarioState(){
+        return this.state;
+    }
+
+    /**
+     * Based on the user-selected geographies, corresponding tables are created
+     * in the users workspace (database schema)
+     * @param geographies a String array containing the selected geographies
+     * @param name the name of the new scenario
+     */
+    private void createGeography(String[] geographies, String name) {
+        String id = UserState.userId;
+        Map<String, Map> map = REPLAN.getDatasets();
+        Connection c = REPLAN.getController().getConnection();
+        REPLAN.getQueries().createScenarioTables(id, name, geographies, map,
+                DefaultConstants.BLOCK_TABLE, DefaultConstants.BLOCK_SUFFIX, c);
+        REPLAN.getQueries().createScenarioTables(id, name, geographies, map,
+                DefaultConstants.OUTLINE_TABLE, DefaultConstants.OUTLINE_SUFFIX,
+                c);
+        REPLAN.getQueries().createScenarioTables(id, name, geographies, map,
+                DefaultConstants.CENTROID_TABLE,
+                DefaultConstants.CENTROID_SUFFIX, c);
+        REPLAN.getQueries().createScenarioTables(id, name, geographies, map,
+                DefaultConstants.ROAD_TABLE, DefaultConstants.ROAD_SUFFIX, c);
+        REPLAN.getQueries().createScenarioTables(id, name, geographies, map,
+                DefaultConstants.POPULATION_TABLE,
+                DefaultConstants.POPULATION_SUFFIX, c);
+        REPLAN.getQueries().createGeographyTable(id, name + DefaultConstants.GEOGRAPHIES_SUFFIX, geographies, c);
+        
+        //tables related to clipping of Map - User selected area
+       REPLAN.getQueries().createCliffedGeographyTable(id, name + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, geographies, c);
+        
+    }
+}

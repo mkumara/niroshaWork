@@ -1,0 +1,144 @@
+% RE-PLAN settings not related to the database connectivity
+
+% The distance between the individual rings of proximity
+ring_distance = 0.02
+
+%buffer for crossing point cleaner
+buffer = 0.000001
+
+%eliminate duplicate ids for a road segment in crossing point table
+eliminate_duplicate_ids = true
+
+% true if region has specific table for traffic counts, false if
+% other traffic info is to be used
+traffic_info_available = true
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% table names %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%% name of census block table %%%%%%%%%%
+%block_table = rockwall_census_blocks
+%block_table = denton_census_blocks
+%block_table = collin_census_blocks
+block_table = dallas_census_blocks
+%block_table = synth_tarrant_1_blocks
+
+%%%%%%%%%% name of centroid table %%%%%%%%%%
+%centroid_table = rockwall_census_blocks_centroids
+centroid_table = denton_census_blocks_centroids
+%centroid_table = collin_census_blocks_centroids
+centroid_table = dallas_census_blocks_centroids
+%centroid_table = synth_tarrant_1_centroids
+
+
+%%%%%%%%%% ignored if compute_catchment_areas = true %%%%%%%%%%
+catchment_table = _catchment
+
+%%%%%%%%%% name of table with county outline %%%%%%%%%%
+%outline_table = rockwall_shp
+%outline_table = denton_shp
+%outline_table = collin_shp
+outline_table = dallas_shp
+%outline_table = synth_tarrant_1_shp
+
+%%%%%%%%%% name of road table %%%%%%%%%%
+%road_table = rockwall_roads
+road_table = denton_roads
+%road_table = collin_roads
+road_table = dallas_roads
+%road_table = synth_tarrant_1_roads_clipped
+
+
+%%%%%%%%%% name of population table %%%%%%%%%%
+%population_table = rockwall_population
+%population_table = denton_population
+%population_table = collin_population
+population_table = dallas_population
+%population_table = synth_tarrant_1_population
+
+%%%%%%%%%% do catchment areas need to be computed %%%%%%%%%%
+compute_catchment_areas = true
+
+%%%%%%%%%% do centroids need to be computed %%%%%%%%%%
+compute_centroids = false
+
+%%%%%%%%%% names of road and traffic tables %%%%%%%%%%
+trafficCounts = nctcog5_traffic_counts
+%roads = rockwall_roads
+%roads = denton_roads
+%roads = collin_roads
+roads = dallas_roads
+trafficRoadsJoin = nctcog_traffic_roads_join
+trafficCountsAll = nctcog_all_traffic_counts
+
+ring_distance = 0.02
+
+%buffer for crossing point cleaner
+buffer = 0.000001
+
+%eliminate duplicate ids for a road segment in crossing point table
+eliminate_duplicate_ids = false
+
+% true if region has specific table for traffic counts, false if
+% other traffic info is to be used
+traffic_info_available = true
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% table names %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%% name of census block table %%%%%%%%%%
+%block_table = rockwall_census_blocks
+block_table = denton_census_blocks
+%block_table = collin_census_blocks
+%block_table = dallas_census_blocks
+%block_table = synth_tarrant_1_blocks
+
+%%%%%%%%%% name of centroid table %%%%%%%%%%
+%centroid_table = rockwall_census_blocks_centroids
+centroid_table = denton_census_blocks_centroids
+%centroid_table = collin_census_blocks_centroids
+%centroid_table = dallas_census_blocks_centroids
+%centroid_table = synth_tarrant_1_centroids
+
+
+%%%%%%%%%% ignored if compute_catchment_areas = true %%%%%%%%%%
+catchment_table = _catchment
+
+%%%%%%%%%% name of table with county outline %%%%%%%%%%
+%outline_table = rockwall_shp
+outline_table = denton_shp
+%outline_table = collin_shp
+%outline_table = dallas_shp
+%outline_table = synth_tarrant_1_shp
+
+%%%%%%%%%% name of road table %%%%%%%%%%
+%road_table = rockwall_roads
+road_table = denton_roads
+%road_table = collin_roads
+%road_table = dallas_roads
+%road_table = synth_tarrant_1_roads_clipped
+
+
+%%%%%%%%%% name of population table %%%%%%%%%%
+%population_table = rockwall_population
+population_table = denton_population
+%population_table = collin_population
+%population_table = dallas_population
+%population_table = synth_tarrant_1_population
+
+%%%%%%%%%% do catchment areas need to be computed %%%%%%%%%%
+compute_catchment_areas = true
+
+%%%%%%%%%% do centroids need to be computed %%%%%%%%%%
+compute_centroids = false
+
+%%%%%%%%%% names of road and traffic tables %%%%%%%%%%
+trafficCounts = nctcog5_traffic_counts
+%roads = rockwall_roads
+roads = denton_roads
+%roads = collin_roads
+%roads = dallas_roads
+trafficRoadsJoin = nctcog_traffic_roads_join
+trafficCountsAll = nctcog_all_traffic_counts
