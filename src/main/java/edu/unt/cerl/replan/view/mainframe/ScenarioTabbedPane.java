@@ -208,7 +208,7 @@ public class ScenarioTabbedPane extends JTabbedPane {
         //update scenariostate to the selected one
         //adjust menu
         System.out.println("Scenario Tab changed... adjusting tools menu..\n");
-        System.out.println("Selected scenario name: "+REPLAN.getMainFrame().getTabs().getSelectedScenario().getState().getName()+"\n");
+        //System.out.println("Selected scenario name: "+REPLAN.getMainFrame().getTabs().getSelectedScenario().getState().getName()+"\n");
         REPLAN.getMainFrame().getREPLANMenuBar().reAdjustToolsMenu();
 
         // if (this.podEditor != null) {

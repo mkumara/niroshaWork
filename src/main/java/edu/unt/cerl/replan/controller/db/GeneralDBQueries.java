@@ -6,6 +6,7 @@ import edu.unt.cerl.replan.REPLAN;
 import edu.unt.cerl.replan.model.ScenarioState;
 import edu.unt.cerl.replan.model.UserState;
 import edu.unt.cerl.replan.view.CliffCoordinate;
+import edu.unt.cerl.replan.view.CliffCoordinateIrregular;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -554,6 +555,131 @@ public class GeneralDBQueries {
             
             stmt.executeUpdate(query);
             System.out.println("Query in GeneralQueries.update cliffgeographies: " + query + "\n");
+            
+               
+           }// table exists
+           
+        } catch (SQLException ex) {
+            Logger.getLogger(ReplanQueries.class.getName()).log(Level.SEVERE,
+                    null, ex);
+        }     
+        
+    }
+   
+   public void cliffRoadTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+        String poly=""; 
+    try {
+            if(this.tableExists(id, name+DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c)){
+            Statement stmt = c.createStatement();
+            String queryTest ="SELECT the_poly FROM "+id+"."+name + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX+ " LIMIT 1";
+            ResultSet rs = stmt.executeQuery(queryTest);
+            if(rs.next()) {
+                poly=rs.getString(1);
+                System.out.println("Cliffing polygon ="+poly);
+            }
+
+            if(poly.length() > 0){
+            
+            
+            String query1 ="UPDATE "+id+"."+name + DefaultConstants.ROAD_SUFFIX+ " SET "+
+                    "the_geom=st_intersection(the_geom ,ST_GeomFromText('"+poly+"', 4326))";
+            
+            System.out.println("Query in GeneralQueries.cliffRoadIrregular: " + query1 + "\n");
+            stmt.executeUpdate(query1);
+            
+            }// end of if geom!=""
+            
+            }//table exists
+           
+        } catch (SQLException ex) {
+            Logger.getLogger(ReplanQueries.class.getName()).log(Level.SEVERE,
+                    null, ex);
+}
+    }
+
+    public void cliffCentroidTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+     String poly="";
+       try {
+           if(this.tableExists(id, name+DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c)){
+               System.out.println("CENTROIDS CLIFFED TABLE THERE");
+            Statement stmt = c.createStatement();
+            String queryTest ="SELECT the_poly FROM "+id+"."+name + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX+ " LIMIT 1";
+            ResultSet rs = stmt.executeQuery(queryTest);
+            if(rs.next()) {
+                poly=rs.getString(1); 
+            }
+            
+            System.out.println("Clipping coords ="+poly);
+            if(poly.length() > 0){
+             // template 
+                //SELECT ST_AsText(ST_Intersection('POINT(4 4)'::geometry, 'POLYGON((0 0 , 10 0, 5 5, 10 10, 0 10, 0 0))'::geometry));
+            String query1 ="SELECT logrecno from "+id+"."+name + DefaultConstants.CENTROID_SUFFIX + 
+                    " WHERE Not ST_IsEmpty(ST_Intersection(ST_AsText(centroid)::geometry, '"+poly+"'::geometry))";
+            
+            //WHERE Not ST_IsEmpty(ST_Buffer(ST_Intersection(country.the_geom, poly.the_geom),0.0));
+            
+            String query2="DELETE from "+id+"."+name + DefaultConstants.CENTROID_SUFFIX+
+                    " WHERE logrecno NOT IN ("+query1+")";
+
+            System.out.println("Query in GeneralQueries.cliffCentroidsIrregular: " + query2 + "\n");
+            stmt.executeUpdate(query2);
+            
+            }//geom!=""
+           }//table exists
+           
+        } catch (SQLException ex) {
+            Logger.getLogger(ReplanQueries.class.getName()).log(Level.SEVERE,
+                    null, ex);
+        }
+
+        
+    }
+
+    public void cliffCensusBlockTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+        String poly="";
+          try {
+            if(this.tableExists(id, name+DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c)){
+            Statement stmt = c.createStatement();
+            String queryTest ="SELECT the_poly FROM "+id+"."+name + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX+ " LIMIT 1";
+            ResultSet rs = stmt.executeQuery(queryTest);
+            if(rs.next()) {
+               poly=rs.getString(1);
+            }
+            
+            if(poly.length() > 0){
+            
+            String query1 ="SELECT logrecno from "+id+"."+name + DefaultConstants.CENTROID_SUFFIX;
+                  
+            
+            String query2="DELETE from "+id+"."+name + DefaultConstants.BLOCK_SUFFIX+
+                    " WHERE logrecno NOT IN ("+query1+")";
+
+            System.out.println("Query in GeneralQueries.cliffBlocksIrregular: " + query2 + "\n");
+            stmt.executeUpdate(query2);
+            
+            }//geom!=""
+            }// table exists
+           
+        } catch (SQLException ex) {
+            Logger.getLogger(ReplanQueries.class.getName()).log(Level.SEVERE,
+                    null, ex);
+        }
+    }
+
+   public  void updateCliffedGeographiesIrregular(CliffCoordinateIrregular coord) {
+        String id = UserState.userId;
+        Connection c = REPLAN.getController().getConnection();
+        ScenarioState state=REPLAN.getMainFrame().getTabs().getSelectedScenario().getState();
+        String name = state.getWorkingCopyName();
+         try {
+            if(this.tableExists(id, name+DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c)){
+            
+            Statement stmt = c.createStatement();
+            String query ="UPDATE "+id+"."+name + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX+ " SET "+
+                    "the_poly='"+coord.getAsString()+"'";
+            
+            stmt.executeUpdate(query);
+            System.out.println("Query in GeneralQueries.update cliffgeographies - setting the_poly: " + query + "\n");
             
                
            }// table exists

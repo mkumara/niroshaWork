@@ -255,7 +255,7 @@ public class ReplanQueries {
             String tableName = id + "." + name;
             Statement stmt = c.createStatement();
             String query = "CREATE TABLE " + tableName
-                    + "(geography VARCHAR(50),x1 float8, y1 float8, x2 float8, y2 float8 );";
+                    + "(geography VARCHAR(50),x1 float8, y1 float8, x2 float8, y2 float8, the_poly VARCHAR(2048) );";
 //           
             stmt.executeUpdate(query);
             for (int i = 0; i < strings.length; i++) {

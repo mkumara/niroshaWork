@@ -139,9 +139,13 @@ public class LoadScenarioListener implements EventListener {
          String id = UserState.userId;
          Map<String, Map> map = REPLAN.getDatasets();
          Connection c = REPLAN.getController().getConnection();
-         REPLAN.getQueries().cliffRoadTable(id, name, geographies, map, c);
+         /*REPLAN.getQueries().cliffRoadTable(id, name, geographies, map, c);
          REPLAN.getQueries().cliffCentroidTable(id, name, geographies, map, c);
-         REPLAN.getQueries().cliffCensusBlockTable(id, name, geographies, map, c);   
+         REPLAN.getQueries().cliffCensusBlockTable(id, name, geographies, map, c); 
+                 */
+         REPLAN.getQueries().cliffRoadTableIrregular(id, name, geographies, map, c);
+         REPLAN.getQueries().cliffCentroidTableIrregular(id, name, geographies, map, c);
+         REPLAN.getQueries().cliffCensusBlockTableIrregular(id, name, geographies, map, c); 
     }
 
     private void copySavedTablesIntoWorkspace(String savedSchema,

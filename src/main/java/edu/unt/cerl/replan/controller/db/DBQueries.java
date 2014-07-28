@@ -3,6 +3,7 @@ package edu.unt.cerl.replan.controller.db;
 
 import edu.unt.cerl.replan.model.ScenarioState;
 import edu.unt.cerl.replan.view.CliffCoordinate;
+import edu.unt.cerl.replan.view.CliffCoordinateIrregular;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
@@ -364,4 +365,12 @@ public interface DBQueries {
     public void cliffCensusBlockTable(String id, String name, String[] geographies, Map map, Connection c);
 
     public void updateCliffedGeographies(CliffCoordinate coord);
+    
+    public void cliffRoadTableIrregular(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void cliffCentroidTableIrregular(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void cliffCensusBlockTableIrregular(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void updateCliffedGeographiesIrregular(CliffCoordinateIrregular coord);
 }

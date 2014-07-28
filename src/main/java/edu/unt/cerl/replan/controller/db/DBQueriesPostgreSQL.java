@@ -3,6 +3,7 @@ package edu.unt.cerl.replan.controller.db;
 
 import edu.unt.cerl.replan.model.ScenarioState;
 import edu.unt.cerl.replan.view.CliffCoordinate;
+import edu.unt.cerl.replan.view.CliffCoordinateIrregular;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
@@ -445,6 +446,26 @@ public class DBQueriesPostgreSQL implements DBQueries {
 
     @Override
     public void updateCliffedGeographies(CliffCoordinate coord) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+     @Override
+    public void cliffRoadTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+}
+
+    @Override
+    public void cliffCentroidTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void cliffCensusBlockTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void updateCliffedGeographiesIrregular(CliffCoordinateIrregular coord) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

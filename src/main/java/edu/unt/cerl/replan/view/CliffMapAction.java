@@ -69,7 +69,7 @@ public class CliffMapAction extends MapAction {
     
     /**
      * Called when the associated control is activated. Leads to the
-     * map pane's cursor tool being set to a new ZoomInTool object
+     * map pane's cursor tool being set to a new CliffMapTool object
      *
      * @param ev the event (not used)
      */

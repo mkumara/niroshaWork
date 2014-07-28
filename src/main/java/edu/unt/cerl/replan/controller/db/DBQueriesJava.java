@@ -7,6 +7,7 @@ import edu.unt.cerl.replan.model.ScenarioState;
 import edu.unt.cerl.replan.model.UserState;
 import edu.unt.cerl.replan.optimization.POD;
 import edu.unt.cerl.replan.view.CliffCoordinate;
+import edu.unt.cerl.replan.view.CliffCoordinateIrregular;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1121,5 +1122,25 @@ public class DBQueriesJava implements DBQueries {
     @Override
     public void updateCliffedGeographies(CliffCoordinate coord) {
         generalQueries.updateCliffedGeographies(coord);
+    }
+    
+    @Override
+    public void cliffRoadTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+        generalQueries.cliffRoadTableIrregular(id, name, geographies, map, c);
+}
+
+    @Override
+    public void cliffCentroidTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+         generalQueries.cliffCentroidTableIrregular(id, name, geographies, map, c);
+    }
+
+    @Override
+    public void cliffCensusBlockTableIrregular(String id, String name, String[] geographies, Map map, Connection c) {
+         generalQueries.cliffCensusBlockTableIrregular(id, name, geographies, map, c);
+    }
+
+    @Override
+    public void updateCliffedGeographiesIrregular(CliffCoordinateIrregular coord) {
+        generalQueries.updateCliffedGeographiesIrregular(coord);
     }
 }
