@@ -10,9 +10,12 @@ import edu.unt.cerl.replan.model.ScenarioState;
 import edu.unt.cerl.replan.model.UserState;
 import edu.unt.cerl.replan.view.CliffMapAction;
 import edu.unt.cerl.replan.view.CliffMapActionIrregular;
+import edu.unt.cerl.replan.view.CliffMapToolIrregular;
 import edu.unt.cerl.replan.view.LocationSelector;
 import edu.unt.cerl.replan.view.LocationSelector.SelectedCoords;
 import edu.unt.cerl.replan.view.PODEditor_View;
+import edu.unt.cerl.replan.view.PodInfoAction;
+import edu.unt.cerl.replan.view.PodInfoTool;
 import edu.unt.cerl.replan.vulnerability.transportation.controller.TransportationVulnLauncher;
 import edu.unt.cerl.replanexecution.Replan;
 import java.awt.BorderLayout;
@@ -30,6 +33,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
@@ -566,8 +570,10 @@ public class ScenarioPanel extends JPanel implements Observer {
         JButton panButton = new JButton(new PanAction(mapPane));
         JButton resetButton = new JButton(new ResetAction(mapPane));
         JButton gEarthButton = new JButton(new ImageIcon("gearth.jpeg"));
-        JButton cliffMapButton = new JButton(new CliffMapAction(mapPane));
+       // JButton cliffMapButton = new JButton(new CliffMapAction(mapPane));
         JButton catchmentButton = new JButton(new CliffMapActionIrregular(mapPane));
+        JButton podInfo = new JButton(new PodInfoAction(mapPane));
+       // JButton podInfo = new JButton(new ImageIcon("catchment.jpeg"));
 
 //        ImageIcon icon;
 //        System.out.println("Gearth button getButtonPanel");
@@ -585,6 +591,16 @@ public class ScenarioPanel extends JPanel implements Observer {
 //        }
 //
 //        JButton gEarthButton = new JButton(new ImageIcon(bImage));
+        
+//        podInfo.addActionListener(new ActionListener() {
+//
+//            @Override
+//            public void actionPerformed(ActionEvent ae) {
+//                getMapPane().setCursorTool(new PodInfoTool());
+//                System.out.println("Cursor Tool = "+getMapPane().getCursorTool().getClass());
+//            }
+//        });
+        
         JButton transportationVulnButton = new JButton(new ImageIcon("pedestrian_sign.jpeg"));
 
         gEarthButton.addActionListener(new ActionListener() {
@@ -609,8 +625,10 @@ public class ScenarioPanel extends JPanel implements Observer {
         buttons.add(resetButton);
         buttons.add(gEarthButton);
        // buttons.add(transportationVulnButton);
-        buttons.add(cliffMapButton);
+        //buttons.add(cliffMapButton);
         buttons.add(catchmentButton);
+         buttons.add(podInfo);
+        
         //buttons.add(transportationVulnButton);
 
         return buttons;

@@ -1,0 +1,376 @@
+//Copied from old CVS by Sarat
+package edu.unt.cerl.replan.controller.db;
+
+import edu.unt.cerl.replan.model.ScenarioState;
+import edu.unt.cerl.replan.view.CliffCoordinate;
+import edu.unt.cerl.replan.view.CliffCoordinateIrregular;
+import java.sql.Connection;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Interface DBQueries
+ */
+public interface DBQueries {
+
+    //
+    // Fields
+    //
+    //
+    // Methods
+    //
+    //
+    // Accessor methods
+    //
+    //
+    // Other methods
+    //
+    /**
+     * @return       boolean
+     * @param        tableName
+     * @param        c
+     */
+    public boolean tableExists(String tableName, Connection c);
+
+    /**
+     * @return       boolean
+     * @param        schemaName
+     * @param        tableName
+     * @param        c
+     */
+    public boolean tableExists(String schemaName, String tableName, Connection c);
+
+    /**
+     * @return       boolean
+     * @param        tableName
+     * @param        columnName
+     * @param        c
+     */
+    public boolean columnExists(String tableName, String columnName,
+            Connection c);
+
+    /**
+     * @return       boolean
+     * @param        schemaName
+     * @param        tableName
+     * @param        columnName
+     * @param        c
+     */
+    public boolean columnExists(String schemaName, String tableName,
+            String columnName, Connection c);
+
+    /**
+     * @return       boolean
+     * @param        tableName
+     * @param        columnName
+     * @param        entry
+     * @param        c
+     */
+    public boolean entryExists(String tableName, String columnName, String entry,
+            Connection c);
+
+    /**
+     * @return       boolean
+     * @param        tableName
+     * @param        columnName1
+     * @param        entry1
+     * @param        columnName2
+     * @param        entry2
+     * @param        c
+     */
+    public boolean entryExists(String tableName, String columnName1,
+            String entry1, String columnName2, String entry2, Connection c);
+
+    /**
+     * @return       boolean
+     * @param        tableName
+     * @param        columnName
+     * @param        entry
+     * @param        c
+     */
+    public boolean entryExists(String schema, String tableName,
+            String columnName, String entry,
+            Connection c);
+
+    /**
+     * @return       boolean
+     * @param        tableName
+     * @param        columnName1
+     * @param        entry1
+     * @param        columnName2
+     * @param        entry2
+     * @param        c
+     */
+    public boolean entryExists(String schema, String tableName,
+            String columnName1,
+            String entry1, String columnName2, String entry2, Connection c);
+
+    /**
+     * @return       int
+     * @param        tableName
+     * @param        c
+     */
+    public int tableSize(String tableName, Connection c);
+
+    /**
+     * @param        c
+     * @param        tableName
+     * @param        columnName
+     * @param        value
+     */
+    public void setFieldTo(Connection c, String tableName, String columnName,
+            String value);
+
+    /**
+     * @param        c
+     * @param        tableName
+     * @param        columnName
+     * @param        value
+     */
+    public void setFieldTo(Connection c, String tableName, String columnName,
+            int value);
+
+    /**
+     * @param        s
+     * @param        c
+     */
+    public void calculateCatchmentAreas(ScenarioState s, Connection c);
+
+    /**
+     * @param        prefix
+     * @param        number
+     * @param        ringDistance
+     * @param        s
+     * @param        c
+     */
+    public void calculateTrafficRings(String prefix, int number,
+            double ringDistance, ScenarioState s, Connection c);
+
+    /**
+     * @param        s
+     * @param        c
+     */
+    public void createCatchmentAreaPolygons(ScenarioState s, Connection c);
+
+    /**
+     * @param        s
+     * @param        numRings
+     * @param        ringDistance
+     * @param        c
+     */
+    public void createRings(ScenarioState s, int numRings, double ringDistance,
+            Connection c);
+
+    /**
+     * @param        s
+     * @param        numRings
+     * @param        c
+     */
+    public void createRingsBasedOnMaxDist(ScenarioState s, int numRings,
+            Connection c);
+
+    /**
+     * @param        s
+     * @param        c
+     */
+    public void createRingPolygons(ScenarioState s, Connection c);
+
+    /**
+     *
+     * @param s is the scenario
+     * @param c is the connection
+     * Multipoint features may be created. This method creates a new record for
+     * each point in a multipoint feature. Therefore, id will no longer be
+     * unique after this method executes. Using the
+     * crossingPointsEliminateDuplicateRoads method should delete all duplicate
+     * id's, making id unique once again.
+     */
+    public void crossingPointsBreakApartMultipoints(ScenarioState s, Connection c);
+
+    /**
+     * @param        s
+     * @param        c
+     */
+    public void crossingPointsEliminateDuplicateRoads(ScenarioState s, Connection c);
+
+    /**
+     *
+     * @param s is the scenario
+     * @param c is the connection
+     * @param funcl is the functional class we wish to eliminate crossing points from
+     * It is likely that many individual road segments will have two or more crossing points assigned to them.
+     * Given the granularity of the data, this does not make any sense. It only serves to clutter the map.
+     * Therefore, this method eliminates all but one crossing point from each road segment.
+     */
+    public void crossingPointsEliminateFuncl(ScenarioState s, Connection c, int funcl);
+
+    /**
+     *
+     * @param s is the scenario
+     * @param c is the connection
+     * Certain functional classes of roads may be judged to be irrelevant in the traffic analysis.
+     * This method allows for the removal of all crossing points on a specific functional class of road.
+     * Removing unneeded crossing points removes clutter from the map display.
+     * An example of a functional class we may want to eliminate is freeway ramps.
+     */
+    public void createCrossingPoints(ScenarioState s, Connection c);
+
+    /**
+     * 
+     * @param s
+     * @param c
+     */
+    public void cleanCrossingPoints(ScenarioState s, Connection c, double buffer);
+
+    /**
+     * @param        s
+     * @param        c
+     */
+    public void createBlock2PodMapping(ScenarioState s, Connection c);
+
+    /**
+     * @param        s
+     * @param        c
+     * @param        tableName
+     * @param        newColumnName
+     */
+    public void addColumn(ScenarioState s, Connection c, String tableName,
+            String newColumnName);
+
+    /**
+     */
+    public void saveChangesToPOD();
+
+    /**
+     */
+    public void addNewPOD(int id);
+
+    /**
+     */
+    public void removePOD();
+
+    /**
+     * @return       Map
+     * @param        state
+     * @param        c
+     */
+    public Map readPODsFromDB(ScenarioState state, Connection c);
+
+    /**
+     * @return       Map
+     * @param        state
+     * @param        c
+     */
+    public Map readWrkCpyPODsFromDB(ScenarioState state, Connection c);
+
+    /**
+     * @param        tableName
+     * @param        field1
+     * @param        fieldInParenthesis
+     * @param        c
+     */
+    public void getFieldFromDB(String tableName, String field1,
+            String fieldInParenthesis, Connection c);
+
+    /**
+     * @param        tableName
+     * @param        field1
+     * @param        field2
+     * @param        valueField2
+     * @param        c
+     */
+    public void getArrayOfField1IfCertainValueInField2(String tableName,
+            String field1, String field2, String valueField2, Connection c);
+
+    /**
+     * @return       Map<String,String>
+     * @param        tableName
+     * @param        field1
+     * @param        field2
+     * @param        field3
+     * @param        c
+     */
+    public Map<String, String> getMapofFields1And2IfCertainValueInField3(
+            String tableName, String field1, String field2, String field3,
+            Connection c);
+
+    /**
+     * @param        c
+     */
+    public void removeOldWorkingCopies(Connection c);
+
+    public String[] getUsersFromDB(Connection c);
+
+    public void addSchema(String schemaName, Connection c);
+
+    public void addEntry(String tableName, String entry1, String entry2,
+            Connection c);
+
+    public void deleteEntry(String tableName, String columnName, String entry,
+            Connection c);
+
+    public void deleteSchema(String schemaName, Connection c);
+
+    public void insertTimestamp(String userId, String workingCopyName,
+            Connection c);
+
+    public void createViews(String schema, String name, String[] geographies,
+            Map<String, Map> datasets, String key, String suffix, Connection c);
+
+    public void createScenarioTables(String schema, String name,
+            String[] geographies, Map<String, Map> datasets, String key,
+            String suffix, Connection c);
+
+    public void dropView(String schema, String name, Connection c);
+
+    public void dropTable(String schema, String name, Connection c);
+
+    public void insertValuesIntoTable(String schema, String table,
+            List<String> values, Connection c);
+
+    public void saveTableAs(String schema1, String fromTable, String schema2,
+            String toTable, Connection c);
+
+    public void createGeographyTable(String id, String name, String[] strings,
+            Connection c);
+
+     public void createCliffedGeographyTable(String id, String name, String[] strings,
+            Connection c);
+
+    public void saveScenarioInformation(ScenarioState state, Connection c);
+
+    public void updateScenarioInformation(ScenarioState state, Connection c);
+
+    public List getScenarioInfo(String schema, String name, Connection c);
+
+    public String[] getScenariosForUser(String userId, Connection c);
+
+    public Map<String, String> getDescriptions(String userId,
+            Connection connection);
+
+    public String[] getGeographies(String userId, String scenario,
+            Connection connection);
+
+    public void deleteScenario(String author, String name, Connection c);
+
+    public void renameTable(String schema, String fromTable, String toTable,
+            Connection c);
+
+    public void removeTimestamp(String schema, String scenario, Connection c);
+
+    public void cliffRoadTable(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void cliffCentroidTable(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void cliffCensusBlockTable(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void updateCliffedGeographies(CliffCoordinate coord);
+    
+    public void cliffRoadTableIrregular(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void cliffCentroidTableIrregular(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void cliffCensusBlockTableIrregular(String id, String name, String[] geographies, Map map, Connection c);
+
+    public void updateCliffedGeographiesIrregular(CliffCoordinateIrregular coord);
+}

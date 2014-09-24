@@ -338,6 +338,7 @@ public class MenuActions {
             REPLAN.getQueries().saveTableAs(schema, oldWcpyName
                     + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, schema, name
                     + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, c);
+            System.out.println("Saving clipped geo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
 
         if (state.arePodsSelected()) {

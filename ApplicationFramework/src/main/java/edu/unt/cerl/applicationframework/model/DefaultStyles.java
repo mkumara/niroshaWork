@@ -1,3 +1,16 @@
+
+/**
+ * -----------------------------------------------------------------------------------------
+ * -----------------------------------------------------------------------------------------
+ *  NAME       TYPE         DATE        DESCRIPTION              
+ * -----------------------------------------------------------------------------------------.
+ *  Legacy_Documentation		Created.
+ * 
+ * -----------------------------------------------------------------------------------------
+ */
+
+
+
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -834,20 +847,11 @@ public class DefaultStyles {
 
         return style;
     }
-
-    public static Style createtype2VulnStyle() throws CQLException {
-
-        // one color for each traffic class
-        Color[] fillColor = new Color[5];
-        fillColor[0] = new Color(26, 152, 80);
-        fillColor[1] = new Color(145, 207, 96);
-        fillColor[2] = new Color(217, 239, 139);
-        fillColor[3] = new Color(254, 224, 139);
-        fillColor[4] = new Color(252, 141, 89);
-
-        return createClassifiedPolygonStyle(1, fillColor, "class");
-
+    
+    public static Style createResourceStyle() throws CQLException {
+        return createPointStyle();
     }
+
 
     public static Style createtype2VulnStyle(int numColors) throws CQLException {
         // one color for each traffic class

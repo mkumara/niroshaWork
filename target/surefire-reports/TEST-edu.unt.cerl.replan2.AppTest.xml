@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite failures="0" time="0.015" errors="0" skipped="0" tests="1" name="edu.unt.cerl.replan2.AppTest">
+<testsuite failures="0" time="2.23" errors="0" skipped="0" tests="1" name="edu.unt.cerl.replan2.AppTest">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.7.0_25\jre\bin"/>
@@ -61,5 +61,5 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase time="0.002" classname="edu.unt.cerl.replan2.AppTest" name="testApp"/>
+  <testcase time="0.005" classname="edu.unt.cerl.replan2.AppTest" name="testApp"/>
 </testsuite>

@@ -1,0 +1,120 @@
+package edu.unt.cerl.replan.controller.db;
+
+import edu.unt.cerl.replan.REPLAN;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Class GeneralDBQueries
+ */
+public class GeneralDBQueries {
+
+    //
+    // Constructors
+    //
+    protected GeneralDBQueries() {
+    }
+
+    /**
+     * This method checks for a given table, column name and entry value, if 
+     * a record of value "entry" in the column "columnName" already exists
+     *
+     * @param tableName name of the table
+     * @param columnName name of the column
+     * @param entry value of the entry
+     * @param c database connection
+     * @return true if the entry exists in the database, false otherwise
+     */
+    protected boolean entryExists(String tableName, String columnName,
+            String entry,
+            Connection c) {
+        boolean exists = false;
+        try {
+            Statement stmt = c.createStatement();
+            String query = "SELECT " + columnName + " FROM " + tableName + ";";
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()) {
+                String name = rs.getString(columnName);
+                if (entry.equals(name)) {
+                    exists = true;
+                    break;
+                }
+            }
+            //c.close();
+            return exists;
+        } catch (SQLException ex) {
+            REPLAN.logger.log(Level.SEVERE,
+                    "Problem checking for existing database entry", ex);
+        }
+        return exists;
+    }
+
+    /**
+     * This method adds a new entry into a table with 2 columns
+     * @param tableName table name
+     * @param entry1 value of first entry
+     * @param entry2 value of second entry
+     * @param c database connection
+     */
+    protected void addEntry(String tableName, String entry1, String entry2,
+            Connection c) {
+        try {
+            Statement stmt = c.createStatement();
+            String query =
+                    "INSERT INTO " + tableName + " VALUES('" + entry1 + "','"
+                    + entry2 + "');";
+            System.out.println(query);
+            stmt.executeUpdate(query);
+        } catch (SQLException ex) {
+            REPLAN.logger.log(Level.SEVERE,
+                    "Error inserting new user into database", ex);
+        }
+    }
+
+    /**
+     * This method adds a new schema to the database
+     * @param schemaName name of new schema
+     * @param c database connection 
+     */
+    void addSchema(String schemaName, Connection c) {
+        try {
+            Statement stmt = c.createStatement();
+            String query = "CREATE SCHEMA " + schemaName + ";";
+            stmt.executeUpdate(query);
+        } catch (SQLException ex) {
+            REPLAN.logger.log(Level.SEVERE,
+                    "Error creating schema for new user", ex);
+        }
+
+    }
+
+    void deleteEntry(String tableName, String columnName, String entry,
+            Connection c) {
+        try {
+            Statement stmt = c.createStatement();
+            String query =
+                    "DELETE FROM " + tableName + " WHERE " + columnName + " = '"
+                    + entry + "';";
+            stmt.executeUpdate(query);
+        } catch (SQLException ex) {
+            REPLAN.logger.log(Level.SEVERE,
+                    "Error deleting database entry", ex);
+        }
+    }
+
+    void deleteSchema(String schemaName, Connection c) {
+        try {
+            Statement stmt = c.createStatement();
+            String query = "DROP SCHEMA " + schemaName + " CASCADE;";
+            stmt.executeUpdate(query);
+        } catch (SQLException ex) {
+            REPLAN.logger.log(Level.SEVERE,
+                    "Error deleting schema entry", ex);
+        }
+    }
+
+}

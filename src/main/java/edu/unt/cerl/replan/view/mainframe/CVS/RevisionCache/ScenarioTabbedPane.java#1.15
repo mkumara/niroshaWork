@@ -1,0 +1,229 @@
+package edu.unt.cerl.replan.view.mainframe;
+
+import edu.unt.cerl.replan.REPLAN;
+import edu.unt.cerl.replan.controller.action.MenuActions;
+import edu.unt.cerl.replan.model.ScenarioState;
+import edu.unt.cerl.replan.model.UserState;
+import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import javax.swing.JCheckBox;
+import javax.swing.JOptionPane;
+import javax.swing.JTabbedPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+/**
+ *
+ * This class
+ *
+ * @author tamara
+ */
+public class ScenarioTabbedPane extends JTabbedPane {
+
+    //private REPLANMenuBar menuBar;
+    // holds a copy of the individual scenario panels
+    private List<ScenarioPanel> scenarioPanels;
+
+    /**
+     * Creates a new tabbed pane and initializes scenario the panel list.
+     * A change listener is added to the tabbed pane, such that tab-related
+     * changes can be handled. 
+     */
+    public ScenarioTabbedPane() {//REPLANMenuBar setMenuBar) {
+        // this.menuBar = setMenuBar;
+        this.scenarioPanels = new LinkedList();
+        this.addChangeListener();
+    }
+
+    /**
+     * Creates a new scenario represented by a new tab in the tabbed pane.
+     * Each scenario contains a map, a map layer table, and RE-PLAN specific
+     * options.
+     *
+     * Upon creation, each scenario has an outline layer, a census block layer
+     * and a road layer. 
+     *
+     * @param state
+     * @throws SQLException
+     */
+    public void createNewScenario(ScenarioState state) throws SQLException {
+        ScenarioPanel scenario = new ScenarioPanel(state); //, menuBar);
+        this.addTab(state.getName(), scenario);
+        this.setSelectedIndex(this.getTabCount() - 1);
+        MainFrame mf;
+        scenario.tab_button = new TabButton(this, this.getTabCount() - 1, this);
+        state.addObserver(scenario);
+        this.scenarioPanels.add(scenario);
+    }
+
+    public void loadScenario(ScenarioState state) throws SQLException {
+        /* Using alternative construcotr for scenario panel, the integer 1 here is dummy, just to load the other constructor*/
+        ScenarioPanel scenario = new ScenarioPanel(state, 1);
+        //state.setIsNew(false);
+        //scenario.setPodListFromDB();
+        this.addTab(state.getName(), scenario);
+        this.setSelectedIndex(this.getTabCount() - 1);
+        //MainFrame mf;
+        scenario.tab_button = new TabButton(this, this.getTabCount() - 1, this);
+        state.addObserver(scenario);
+        this.scenarioPanels.add(scenario);
+    }
+    
+    /**
+     * Iterates through the tabs and gets all the unsaved tabs,
+     * then returns the unsaved tab names back.
+     * Called when closing the main window
+     */
+    public String[] findAllUnsavedScenarios() {
+        ScenarioPanel current;
+        String[] currentNames = new String[this.getTabCount()];
+        
+        Iterator<ScenarioPanel> it = this.scenarioPanels.iterator();
+        int i=0;
+        // build list of unsaved tabs
+        while (it.hasNext()) { 
+            current = it.next();
+            if (!current.getState().isScenarioSaved()) {
+                currentNames[i] = current.getState().getName();
+                i++;
+            }
+        }
+        return currentNames;
+    }
+    
+    
+    
+    /**
+     * Iterates through the tabs to find the unsaved tab that the user
+     * wants to save before closing, the name of the scenario/tab is given
+     * from the MenuActions. Then returns the state back to be saved.
+     */
+    public ScenarioState findSelectedScenario(String selected) {
+        // loop through tabs and find which scenario was passed in by matching the names
+        ScenarioPanel current;
+        ScenarioState state = null;
+        Iterator<ScenarioPanel> it = this.scenarioPanels.iterator();
+        while (it.hasNext()) { 
+            current = it.next();
+            // if the right tab is found
+            if (current.getState().getName().equals(selected)) {
+                // save this scenario for the user
+                state = current.getState();
+                break;
+            }
+        }
+        return state;
+    }
+    
+  
+    /**
+     * Iterates through all tabs and calls for each scenario tab its
+     * corresponding cleanUp method to take care of underlying database tables.
+     * The panel is then removed from the tabbed pane. 
+     */
+    public void cleanUpAllTabs() {
+        Iterator<ScenarioPanel> it = this.scenarioPanels.iterator();
+        while (it.hasNext()) {
+            this.getSelectedScenario();
+            ScenarioPanel scenario = it.next();
+           /// scenario.getState().
+            scenario.cleanUp();
+            this.remove(scenario);
+        }
+    }
+
+    /**
+     * "Cleans up" a specific tab, i.e. the tab is removed from the tabbed pane
+     * and the corresponding cleanUp method is called for the scenario panel,
+     * which takes care of the underlying tables.
+     * @param i
+     */
+    public void cleanUpTab(int i) {
+        ScenarioPanel panel = (ScenarioPanel) this.getComponentAt(i);
+        scenarioPanels.remove(panel);
+        panel.cleanUp();
+    }
+
+    /**
+     * Interface to the currently selected scenario.
+     * @return selected scenario.
+     */
+    public ScenarioPanel getSelectedScenario() {
+        return (ScenarioPanel) this.getSelectedComponent();
+    }
+
+    /**
+     * Adds a change listener to the underlying tabbed pane.
+     */
+    private void addChangeListener() {
+        this.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                tabChanged(e);
+            }
+        });
+    }
+
+    /**
+     * This method collects all tab names (= scenario names) and returns them
+     * in a String array.
+     * @return an array of scenario names
+     */
+    public String[] getTabNames() {
+        int tabCount = this.getTabCount();
+        String[] tabNames = new String[tabCount];
+        for (int i = 0; i < tabCount; i++) {
+            tabNames[i] = this.getTitleAt(i);
+        }
+        return tabNames;
+    }
+    
+    /*
+     *  This method is called to when any scenario is changed
+     *  or saved. When something has changed, it will add an "*"
+     *  to the end of the name on the tab to represent a change has
+     *  been made and not yet saved. It will delete the "*" when 
+     *  the scenario selected has been saved and no new changes
+     *  are current without saving.
+     */
+    public void changeTabToRepresentSavedState(boolean changesAreSaved) {
+        String current;
+        // get the title
+        current = this.getTitleAt(this.getSelectedIndex());
+        
+        //if the method is called because changes are not saved
+        if (!changesAreSaved) {
+            // add the '*' to the title tab 
+             current = current.concat("*");
+        }
+        
+        this.scenarioPanels.get(this.getSelectedIndex()).tab_button.updateTitle(current);
+    }
+    
+    
+
+    private void tabChanged(ChangeEvent e) {
+        //update scenariostate to the selected one
+        //adjust menu
+        System.out.println("Scenario Tab changed... adjusting tools menu..\n");
+        //System.out.println("Selected scenario name: "+REPLAN.getMainFrame().getTabs().getSelectedScenario().getState().getName()+"\n");
+        REPLAN.getMainFrame().getREPLANMenuBar().reAdjustToolsMenu();
+
+        // if (this.podEditor != null) {
+        //     this.podEditor.hide();
+        // }
+        // if (this.scenarioPanes.getTabCount() > 0) {
+        //     this.getSelectedScenario().adjustMenu();
+        // }
+    }
+
+    public void updateNameOfSelectedScenario(String newName) {
+        // String oldName = scenarioPanes.getTitleAt(
+        //        scenarioPanes.getSelectedIndex());
+        // scenarioPanes.setTitleAt(scenarioPanes.getSelectedIndex(), newName);
+        // scenarios.get(oldName).getTabButton().updateTitle(newName);
+        // scenarios.put(newName, scenarios.remove(oldName));
+    }
+}

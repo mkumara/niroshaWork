@@ -1,0 +1,905 @@
+
+/**
+ * -----------------------------------------------------------------------------------------
+ * -----------------------------------------------------------------------------------------
+ *  NAME       TYPE         DATE        DESCRIPTION              
+ * -----------------------------------------------------------------------------------------.
+ *  Legacy_Documentation		Created.
+ * 
+ * -----------------------------------------------------------------------------------------
+ */
+
+
+
+//Copied from old CVS by Sarat
+package edu.unt.cerl.replan.view.mainframe;
+
+import com.csvreader.GEarthExporter;
+import edu.unt.cerl.applicationframework.model.DefaultConstants;
+import edu.unt.cerl.applicationframework.model.DefaultStyles;
+import edu.unt.cerl.replan.REPLAN;
+import edu.unt.cerl.replan.model.PODList;
+import edu.unt.cerl.replan.model.ScenarioState;
+import edu.unt.cerl.replan.model.UserState;
+import edu.unt.cerl.replan.view.CliffMapAction;
+import edu.unt.cerl.replan.view.CliffMapActionIrregular;
+import edu.unt.cerl.replan.view.LocationSelector;
+import edu.unt.cerl.replan.view.LocationSelector.SelectedCoords;
+import edu.unt.cerl.replan.view.PODEditor_View;
+import edu.unt.cerl.replan.vulnerability.transportation.controller.TransportationVulnLauncher;
+import edu.unt.cerl.replanexecution.Replan;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import net.miginfocom.swing.MigLayout;
+import org.geotools.data.DataStore;
+import org.geotools.data.DataStoreFinder;
+import org.geotools.data.FeatureSource;
+import org.geotools.filter.text.cql2.CQLException;
+import org.geotools.geometry.DirectPosition2D;
+import org.geotools.map.FeatureLayer;
+import org.geotools.map.Layer;
+import org.geotools.map.MapContent;
+import org.geotools.renderer.GTRenderer;
+import org.geotools.renderer.lite.StreamingRenderer;
+import org.geotools.styling.Style;
+import org.geotools.swing.JMapPane;
+import org.geotools.swing.action.PanAction;
+import org.geotools.swing.action.ResetAction;
+import org.geotools.swing.action.ZoomInAction;
+import org.geotools.swing.action.ZoomOutAction;
+
+/**
+ * Class ScenarioPanel
+ */
+public class ScenarioPanel extends JPanel implements Observer {
+
+    private JMapPane mapPane; // jpanel containing map context
+    private MapContent map; // contains the map
+    //private MapLayerTable table; // list of layers, for selecting/de-selecting
+    private REPLANMapLayerTable table;
+    private OptionPanel optionPanel;
+    private PODEditor_View podEditor; // PODEditor pertinent to this scenario
+    private PODList list; // POD List for this scenario
+    private Replan task = null;
+    private ScenarioState state; // state information of this scenario
+    private boolean catchmentLayerCreated;
+    private boolean coverageLayerCreated;
+    private boolean type2VulnLayerCreated;
+    private boolean crossingPointLayerCreated;
+    private boolean podLayerCreated;
+    private boolean ringLayerCreated;
+    private boolean type2AllocLayerCreated;
+    private int coverageOptions[] = null;
+    private Layer coverageLayer = null;
+    private Layer type2VulnLayer = null;
+    private Layer crossingPointLayer;
+    private Layer podLayer;
+    private Layer ringLayer;
+    private Layer catchmentLayer;
+    private Layer type2AllocLayer;
+    public TabButton tab_button;
+    DirectPosition2D pos;
+    LocationSelector locSelector;
+
+    //private BaseTrafficEstimator baseTraffic;
+    //private HashMap trafficRoadsList;
+    //private REPLANMenuBar menuBar;
+    /**
+     * Creates a new instance of a scenario and initializes its GUI
+     *
+     * @param state
+     */
+    public ScenarioPanel(ScenarioState state) throws SQLException { //, REPLANMenuBar setMenuBar) throws SQLException {
+        //this.menuBar = setMenuBar;
+        this.podLayerCreated = false;
+        this.catchmentLayerCreated = false;
+        this.coverageLayerCreated = false;
+        this.type2VulnLayerCreated = false;
+        this.type2AllocLayerCreated = false;
+        this.ringLayerCreated = false;
+        this.crossingPointLayerCreated = false;
+        list = new PODList();
+        // need to load existing PODs from DB here
+        this.state = state;
+        state.addObserver(this);
+        this.podEditor = new PODEditor_View(state.getWorkingCopyName(), list, state);
+        podEditor.getPodList().addObserver(this);
+        this.podEditor.setVisible(false);
+        try {
+            map = new MapContent();
+            map.setTitle(state.getName());
+            this.init();
+            state.createBaseTrafficEstimator();
+        } catch (IOException ex) {
+            Logger.getLogger(ScenarioPanel.class.getName()).
+                    log(Level.SEVERE, null, ex);
+        }
+
+        System.out.println("ScenarioPanel::Are we getting here???");
+
+        list.addObserver(this);
+        //baseTraffic = new BaseTrafficEstimator(state);
+        //trafficRoadsList = new HashMap();
+
+        //list.add_POD("marty", "2418 Stella St", "Denton", "76201", 123.123, 133.312, true, true, "Here are the comments", 23);
+        // System.out.println("*********"+list.get_POD(0).get_name());
+        // the following line causes errors
+        // edu.unt.cerl.replan.controller.db.PODQueries.createPODTable();
+        //    System.out.println("****************** After creating the POD Table");
+    }
+    /*
+     * This is an alternative constructor used while loading a scenario. The
+     * dummy integer parameter has no meaning, its used only to make a
+     * difference between two constructors
+     */
+
+    public ScenarioPanel(ScenarioState state, int dummy) throws SQLException { //, REPLANMenuBar setMenuBar) throws SQLException {
+        //this.menuBar = setMenuBar;
+        this.podLayerCreated = false;
+        this.catchmentLayerCreated = false;
+        this.coverageLayerCreated = false;
+        this.type2VulnLayerCreated = false;
+        this.ringLayerCreated = false;
+        this.crossingPointLayerCreated = false;
+
+        list = new PODList();
+
+        //list = REPLAN.getMainFrame().getTabs().getSelectedScenario().getPodList();
+        // need to load existing PODs from DB here
+        this.state = state;
+        setPodListFromDB();
+        this.podEditor = new PODEditor_View(state.getWorkingCopyName(), list, state);
+        this.podEditor.setVisible(false);
+        try {
+            map = new MapContent();
+            map.setTitle(state.getName());
+            this.init();
+            state.createBaseTrafficEstimator();
+        } catch (IOException ex) {
+            Logger.getLogger(ScenarioPanel.class.getName()).
+                    log(Level.SEVERE, null, ex);
+        }
+
+        System.out.println("ScenarioPanel::Are we getting here???");
+        list.addObserver(this);
+        //baseTraffic = new BaseTrafficEstimator(state);
+
+    }
+
+    /**
+     * Update method to implement the Observer interface.
+     *
+     * @param o
+     * @param o1
+     */
+    private void init() throws IOException {
+        // try {
+        Connection c = REPLAN.getController().getConnection();
+        REPLAN.getQueries().insertTimestamp(UserState.userId, this.state.getWorkingCopyName(), c);
+
+        this.setLayout(new BorderLayout());
+
+        // create county outline layer
+        createLayer(state.getWorkingCopyName() + DefaultConstants.OUTLINE_SUFFIX, DefaultStyles.createDefaultBlockStyle(), "County outline");
+        createLayer(state.getWorkingCopyName() + DefaultConstants.ROAD_SUFFIX, DefaultStyles.createDefaultRoadStyle(), "Roads");
+        createLayer(state.getWorkingCopyName() + DefaultConstants.BLOCK_SUFFIX, DefaultStyles.createDefaultBlockStyle(), "Census Blocks");
+
+        System.out.println("\t--> \tScenarioPanel: county outline created");
+        System.out.println("Podlayer test\n");
+
+        //TODO change renderer
+//        System.out.println("\t--> \tmap = " + map);
+        //---     mapPane = new JMapPane(new StreamingRenderer(), map);
+        System.out.println("\t--> \t after map");
+
+        //   StatusBar statusBar = new StatusBar(mapPane);
+        // TODO might need to change according to user when using views
+        //map = new DefaultMapContext(DefaultGeographicCRS.WGS84);
+        //           map.addLayer(null);
+        mapPane = new JMapPane();
+        mapPane.setMapContent(map);
+
+        GTRenderer renderer = new StreamingRenderer();
+        mapPane.setRenderer(renderer);
+
+        //table = new MapLayerTable();
+        table = new REPLANMapLayerTable();
+        table.setMapPane(mapPane);
+        //  mapPane.setMapLayerTable(table);
+//to pass this JMapPane to PodInfoTool
+        podEditor.setMapPane(mapPane);
+
+        table.setMaximumSize(new Dimension(300, 350));
+
+        Style style = DefaultStyles.createDefaultBlockStyle();
+
+        if (state.arePodsSelected()) {
+            podLayerCreated = true;
+            System.out.println("About to create POD layer:");
+            System.out.println(state.getAuthor() + "." + state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX);
+//         createLayer(state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, DefaultStyles.createPointStyle(), "PODs");   createLayer(state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, DefaultStyles.createPointStyle(), "PODs");
+
+            try {
+                podLayer = createLayer(state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, DefaultStyles.createPODStyle(), "PODs");
+                System.out.println("Testing pods begin");
+                podLayerCreated = true;
+//               createLayer(state.getWorkingCopyName() + DefaultConstants.OUTLINE_SUFFIX, DefaultStyles.createDefaultBlockStyle(), "Testing County outline");
+//               System.out.println("Testing county outline end");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (state.getCatchmentAreasGiven()) {
+            catchmentLayer = createLayer(state.getWorkingCopyName() + DefaultConstants.CATCHMENT_SUFFIX, DefaultStyles.createDefaultAreaStyle(), "Catchment Areas");
+            catchmentLayerCreated = true;
+        }
+
+        if (state.isTrafficAnalysisPerformed()) {
+            try {
+                ringLayer = createLayer(state.getWorkingCopyName() + DefaultConstants.RINGS_SUFFIX, DefaultStyles.createRingStyle(), "Rings");
+                ringLayerCreated = true;
+                crossingPointLayer = createLayer(state.getWorkingCopyName() + DefaultConstants.CROSSINGPT_SUFFIX,
+                        DefaultStyles.createCrossingStyleWithTraffic(), "Crossing Points");
+                crossingPointLayerCreated = true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (state.isCoverageAnalysisPerformed()) {
+            try {
+                coverageLayer = createLayer(state.getWorkingCopyName()
+                        + DefaultConstants.COVERAGE_SUFFIX,
+                        DefaultStyles.createCoverageStyle(),
+                        DefaultConstants.COVERAGE);
+                coverageLayerCreated = true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        System.out.println("\t--> \tScenarioPanel: before creating road layer");
+
+        // create road layer
+ /*
+         * createLayer(state.getWorkingCopyName() +
+         * DefaultConstants.ROAD_SUFFIX, DefaultStyles.createDefaultRoadStyle(),
+         * "Roads");
+         */
+        System.out.println("\t--> \tScenarioPanel: road layer created");
+
+        // create block layer
+       /*
+         * createLayer(state.getWorkingCopyName() +
+         * DefaultConstants.BLOCK_SUFFIX,
+         * DefaultStyles.createDefaultBlockStyle(), "Census Blocks");
+         */
+        Iterator<Layer> layersList = mapPane.getMapContent().layers().listIterator();
+        while (layersList.hasNext()) {
+            Layer currentLayer = layersList.next();
+            if (currentLayer.getTitle().contentEquals("Census Blocks")) {
+                currentLayer.setVisible(false);
+                System.out.println("\t--> \tScenarioPanel: Census Blocks  layer visible set to false");
+                break;
+            }
+        }
+        System.out.println("\t--> \tScenarioPanel: block layer created");
+
+        JPanel borderPanel = new JPanel(new MigLayout());
+        TodoPanel todoPanel = new TodoPanel();
+        state.addObserver(todoPanel);
+        // System.out.println("ScenarioPanel: observer added for todopanel");
+        //this.state.addObserver(todoPanel);
+
+        JButton podEditorButton = new JButton("POD Editor");
+        podEditorButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                ScenarioPanel.this.podEditor.setVisible(true);
+            }
+        });
+        optionPanel = new OptionPanel(this.state);
+
+        this.add(mapPane, BorderLayout.CENTER);
+        //   this.add(statusBar, BorderLayout.SOUTH);
+        this.add(borderPanel, BorderLayout.EAST);
+        this.add(this.getButtonPanel(), BorderLayout.NORTH);
+        borderPanel.add(table, "wrap");
+        borderPanel.add(optionPanel, "wrap");
+        borderPanel.add(todoPanel, "wrap");
+        borderPanel.add(podEditorButton, "wrap");
+        //borderPanel.add(gEarthButton);
+
+        if (state.isTrafficAnalysisPerformed()) {
+            optionPanel.setVisible(true);
+        } else {
+            optionPanel.setVisible(false);
+        }
+    }
+
+    @Override
+    public void update(Observable o, Object o1) {
+        System.out.println("in update method");
+
+        REPLAN.getMainFrame().getTabs().getSelectedScenario().getState().setScenarioSavedState(false);
+        // add '*' on scenario/tab name to show that scenario is unsaved with changes made
+        REPLAN.getMainFrame().getTabs().changeTabToRepresentSavedState(
+                REPLAN.getMainFrame().getTabs().getSelectedScenario().getState().isScenarioSaved());
+
+        if (o.getClass() == ScenarioState.class) {
+            if (state.didPodsChange()) {
+
+                // track layers created, add them at the very end
+                // and only if they have not already been added
+                Layer addedLayers[] = new Layer[25];
+                int newLayerIndex = 0;
+
+                // pod layer
+                if (podLayerCreated) {
+                    refreshLayer(podLayer);
+                } else {
+                    podLayerCreated = true;
+                    System.out.println(state.getAuthor() + "." + state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX);
+                    try {
+                        // create but not adding until the end,
+                        // so it is not added multiple times, causing geotools to crash
+                        podLayer = createLayer_dontAddToMap(state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, DefaultStyles.createPODStyle(), "PODs");
+                        addedLayers[newLayerIndex] = podLayer;
+                        newLayerIndex++;
+
+                        //podLayer = createLayer(state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, DefaultStyles.createPODStyle(), "PODs");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                // If the catchment layers are in the table, but need to be added 
+                // to the map
+                if (!this.catchmentLayerCreated && this.getState().getCatchmentAreasGiven()) {
+                    // create but not adding until the end,
+                    // so it is not added multiple times, causing geotools to crash
+                    this.catchmentLayer = this.createLayer_dontAddToMap(state.getWorkingCopyName() + DefaultConstants.CATCHMENT_SUFFIX,
+                            DefaultStyles.createDefaultAreaStyle(), "Catchment Areas");
+
+                    this.catchmentLayerCreated = true;
+
+                    addedLayers[newLayerIndex] = catchmentLayer;
+                    newLayerIndex++;
+                }
+
+                if (!this.type2VulnLayerCreated && this.getState().isType2VulnAnalysisPerformed()) {
+                    try {
+                        this.type2VulnLayer = this.createLayer_dontAddToMap(state.getWorkingCopyName() + DefaultConstants.TYPE2_VULN_CLASSES,
+                                DefaultStyles.createtype2VulnStyle(10), "Type2 Vulnerability");
+                        this.type2VulnLayerCreated = true;
+                        addedLayers[newLayerIndex] = type2VulnLayer;
+                        newLayerIndex++;
+                    } catch (CQLException ex) {
+                        Logger.getLogger(ScenarioPanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+
+                if (!this.type2AllocLayerCreated && this.getState().isResourceAllocationPerformed()) {
+                    try {
+                        //refresh vuln layer
+//                        this.type2VulnLayer = this.createLayer_dontAddToMap(state.getWorkingCopyName() + DefaultConstants.TYPE2_VULN_CLASSES,
+//                                DefaultStyles.createtype2VulnStyle(10), "Type2 Vulnerability");
+                        this.type2AllocLayer = this.createLayer_dontAddToMap(state.getWorkingCopyName() + DefaultConstants.TYPE2_ALLOC_CLASSES,
+                                DefaultStyles.createtype2VulnStyle(10), "Resource Allocation");
+                        this.type2AllocLayerCreated = true;
+
+//                        toBeRefreshedLayers[toBeRefreshedIndex] = type2VulnLayer;
+//                        toBeRefreshedIndex++;
+//                        addedLayers[newLayerIndex] = type2VulnLayer;
+//                        newLayerIndex++;
+                        addedLayers[newLayerIndex] = type2AllocLayer;
+                        newLayerIndex++;
+                    } catch (CQLException ex) {
+                        Logger.getLogger(ScenarioPanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+                }
+
+                // add all newly created layers to the map
+                // if they have not already been added
+                for (int i = 0; i < newLayerIndex; i++) {
+                    if (!map.layers().contains(addedLayers[i])) {
+                        map.layers().add(addedLayers[i]);
+                    }
+                }
+
+            }
+        }
+
+        if (o.getClass() == PODList.class) {
+            System.out.println("Testing Observer-- Exists: " + ((PODList) o).getMessage().doesPodTableExist() + " Newly created: " + ((PODList) o).getMessage().isPodTableNewlyCreated() + " Added: " + ((PODList) o).getMessage().wasPodAdded() + " Updated: " + ((PODList) o).getMessage().wasPodUpadated() + " Deleted: " + ((PODList) o).getMessage().wasPodDeleted() + " fid: " + ((PODList) o).getMessage().whichPodChanged());
+
+            if (podLayerCreated) {
+                refreshLayer(podLayer);
+
+            }
+
+            if (((PODList) o).getMessage().wasPodUpadated() && !podLayerCreated) {
+                podLayerCreated = true;
+                System.out.println("About to create POD layer:");
+                System.out.println(state.getAuthor() + "." + state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX);
+//                createLayer(state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, DefaultStyles.createPointStyle(), "PODs");
+                try {
+                    podLayer = createLayer(state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, DefaultStyles.createPODStyle(), "PODs");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } else if (o.getClass() == SelectedCoords.class) {
+            System.out.println("Coordinates selected!");
+
+            pos = locSelector.getLocationSelected();
+            if (locSelector.isTransportationVuln()) {
+                try {
+                    System.out.println("Do Transportation Vuln!!!");
+                    TransportationVulnLauncher tvl = new TransportationVulnLauncher();
+                    tvl.setLocation(pos);
+                } catch (SQLException ex) {
+                    Logger.getLogger(ScenarioPanel.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IOException ex) {
+                    Logger.getLogger(ScenarioPanel.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+            } 
+            else{
+                System.out.println("You clicked the Google Earth button!");
+                GEarthExporter gex = new GEarthExporter();
+                gex.setLocation(pos);
+                gex.init();
+            }
+        }
+    }
+
+    public void reRender() {
+//        this.mapPane.setRenderer(null);
+//        mapPane.setRepaint(true);
+//        this.adjustMenu();
+        mapPane.repaint();
+    }
+
+//    public void adjustMenu() {
+//        if (this.state.arePodsSelected()) {
+//            this.owner.saveScenario.setEnabled(true);
+//            this.owner.saveScenarioAs.setEnabled(true);
+//            this.owner.exportToShp.setEnabled(true);
+//            this.owner.replanItem.setEnabled(true);
+//        } else {
+//            this.owner.saveScenario.setEnabled(false);
+//            this.owner.saveScenarioAs.setEnabled(false);
+//            this.owner.exportToShp.setEnabled(false);
+//            this.owner.replanItem.setEnabled(false);
+//        }
+//        if (this.state.isTrafficAnalysisPerformed()) {
+//            this.owner.podAnalyzerItem.setEnabled(true);
+//            this.options.setVisible(true);
+//
+//        } else {
+//            this.owner.podAnalyzerItem.setEnabled(false);
+//            this.options.setVisible(false);
+//        }
+//        if (state.didPodsChange()) {
+//            this.todo.showWarning();
+//        } else {
+//            this.todo.hideWarning();
+//        }
+//    }
+    /**
+     * Accepts a layer and refreshes it by toggling visible the Layer.setVisible
+     * method twice
+     *
+     * @param layerName
+     */
+    public void refreshLayer(Layer layerName) {
+        layerName.setVisible(!layerName.isVisible());
+        layerName.setVisible(!layerName.isVisible());
+
+    }
+
+    public Layer createLayer(String tableName, Style style, String name) {
+        Layer layer = null;
+        try {
+            System.out.println("tableName in createLayer:" + tableName + "\n");
+            Map params = REPLAN.getController().getPostGIS();
+            params.remove("schema");
+            params.remove("role");
+            params.put("schema", UserState.userId);
+            params.put("role", UserState.userId);
+            DataStore pgDatastore
+                    = DataStoreFinder.getDataStore(params);
+            FeatureSource fs = pgDatastore.getFeatureSource(tableName);
+            layer = new FeatureLayer(fs, style, name);
+            map.layers().add(layer);
+            // pgDatastore.dispose();
+        } catch (IOException ex) {
+            Logger.getLogger(ScenarioPanel.class.getName()).
+                    log(Level.SEVERE, null, ex);
+        } catch (Exception e) {
+            System.out.println("This is probably: ERROR: LWGEOM_estimated_extent: couldn't locate table within current schema \n");
+        }
+        return layer;
+    }
+
+    // When adding multiple layers, this helps to keep
+    // geotools from crashing from trying to add multiple layers to quickly
+    // This error is stimming from the update function being called in the 
+    // scenario multiple times from different observerables, when it only needs
+    // to update one time
+    public Layer createLayer_dontAddToMap(String tableName, Style style, String name) {
+        Layer layer = null;
+        try {
+            System.out.println("tableName in createLayer:" + tableName + "\n");
+            Map params = REPLAN.getController().getPostGIS();
+            params.remove("schema");
+            params.remove("role");
+            params.put("schema", UserState.userId);
+            params.put("role", UserState.userId);
+            DataStore pgDatastore
+                    = DataStoreFinder.getDataStore(params);
+            FeatureSource fs = pgDatastore.getFeatureSource(tableName);
+            layer = new FeatureLayer(fs, style, name);
+
+            layer.setTitle(name);
+            //map.layers().add(layer);
+            // pgDatastore.dispose();
+        } catch (IOException ex) {
+            Logger.getLogger(ScenarioPanel.class.getName()).
+                    log(Level.SEVERE, null, ex);
+        } catch (Exception e) {
+            System.out.println("This is probably: ERROR: LWGEOM_estimated_extent: couldn't locate table within current schema \n");
+        }
+        return layer;
+    }
+
+    private JPanel getButtonPanel() {
+        JPanel buttons = new JPanel();
+        JButton zoomInButton = new JButton(new ZoomInAction(mapPane));
+        JButton zoomOutButton = new JButton(new ZoomOutAction(mapPane));
+        JButton panButton = new JButton(new PanAction(mapPane));
+        JButton resetButton = new JButton(new ResetAction(mapPane));
+        JButton gEarthButton = new JButton(new ImageIcon("gearth.jpeg"));
+        JButton cliffMapButton = new JButton(new CliffMapAction(mapPane));
+        JButton catchmentButton = new JButton(new CliffMapActionIrregular(mapPane));
+
+//        ImageIcon icon;
+//        System.out.println("Gearth button getButtonPanel");
+//        URL imageURL = ScenarioPanel.class.getResource("/gearth.jpeg");
+//
+//        System.out.println("Gearth button getButtonPanel"+imageURL.getPath());
+//        BufferedImage bImage = null;
+//        try{
+//            bImage = ImageIO.read(ScenarioPanel.class.getResourceAsStream("/eye_open.png"));
+//        }
+//        catch(Exception ex){
+//
+//            System.out.println("Trouble accessing gearth.jpeg");
+//            ex.printStackTrace();
+//        }
+//
+//        JButton gEarthButton = new JButton(new ImageIcon(bImage));
+        JButton transportationVulnButton = new JButton(new ImageIcon("pedestrian_sign.jpeg"));
+
+        gEarthButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                gEarthInit();
+            }
+        });
+
+        transportationVulnButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                transportationVulnInit();
+            }
+        });
+
+        buttons.add(zoomInButton);
+        buttons.add(zoomOutButton);
+        buttons.add(panButton);
+        buttons.add(resetButton);
+        buttons.add(gEarthButton);
+       // buttons.add(transportationVulnButton);
+        buttons.add(cliffMapButton);
+        buttons.add(catchmentButton);
+        //buttons.add(transportationVulnButton);
+
+        return buttons;
+
+    }
+
+    /**
+     * Removes working copy tables pertinent to this scenario.
+     */
+    void cleanUp() {
+//        this.map.clearLayerList();
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.BLOCK_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.BLOCK_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.OUTLINE_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.OUTLINE_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.CENTROID_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.CENTROID_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.ROAD_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.ROAD_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.POPULATION_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.POPULATION_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.GEOGRAPHIES_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.GEOGRAPHIES_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.CLIFFED_GEOGRAPHIES_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.POD_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_SUFFIX, REPLAN.getController().getConnection());
+        }
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.B2P_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.B2P_SUFFIX, REPLAN.getController().getConnection());
+        }
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.CATCHMENT_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.CATCHMENT_SUFFIX, REPLAN.getController().getConnection());
+        }
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.CROSSINGPT_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.CROSSINGPT_SUFFIX, REPLAN.getController().getConnection());
+        }
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.RINGS_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.RINGS_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        // For Marty's Transportation Vulnerability Additions:
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_W_TRANS_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_W_TRANS_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_W_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_W_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_WO_TRANS_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_WO_TRANS_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_WO_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_WO_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.GTFS_STOPS_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.GTFS_STOPS_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_BUFFER_WO_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_BUFFER_WO_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_BUFFER_W_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.COVERAGE_AREA_BUFFER_W_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.REACH_COMPARISONS, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.REACH_COMPARISONS, REPLAN.getController().getConnection());
+        }
+
+        //         if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_BUFFER_WO_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection())) {
+        //     REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_BUFFER_WO_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection());
+        // }
+        //         if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_BUFFER_W_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection())) {
+        //     REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_BUFFER_W_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection());
+        // }
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_WO_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_WO_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_WO_TRANS_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_WO_TRANS_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_W_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_W_TRANS_DISPLAY_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_W_TRANS_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.VULN_AFTER_COVERAGE_AREA_W_TRANS_SUFFIX, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.TYPE2_VULN_CLASSES, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.TYPE2_VULN_CLASSES, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.TYPE2_ALLOC_CLASSES, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.TYPE2_ALLOC_CLASSES, REPLAN.getController().getConnection());
+        }
+
+        if (REPLAN.getQueries().tableExists(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.SPANISH_SUFFIX, REPLAN.getController().getConnection())) {
+            REPLAN.getQueries().dropTable(UserState.userId, this.state.getWorkingCopyName() + DefaultConstants.SPANISH_SUFFIX, REPLAN.getController().getConnection());
+        }
+        REPLAN.getQueries().removeTimestamp(UserState.userId, this.state.getWorkingCopyName(), REPLAN.getController().getConnection());
+    }
+
+    /**
+     * Returns the state of this scenario, which contains information, such as
+     * scenario name and if RE-PLAN has been executed.
+     *
+     * @return state of scenario
+     */
+    public ScenarioState getState() {
+        return this.state;
+    }
+
+    public PODList getPodList() {
+        return list;
+    }
+
+    public PODEditor_View getPODEditor_View() {
+        return podEditor;
+    }
+
+    public void setPODEditor_View(PODEditor_View podEditor) {
+        this.podEditor = podEditor;
+    }
+
+    public void setPodListFromDB() {
+        //list.setList(REPLAN.getQueries().readPODsFromDB(state, REPLAN.getController().getConnection()));
+        list.setList(REPLAN.getQueries().readWrkCpyPODsFromDB(state, REPLAN.getController().getConnection()));
+    }
+
+    public JMapPane getMapPane() {
+        return this.mapPane;
+    }
+
+    public MapContent getMapContent() {
+        return this.map;
+    }
+
+    public void setPodList(PODList podlist) {
+        this.list = podlist;
+    }
+
+    public PODEditor_View getPodEditor() {
+        return this.podEditor;
+    }
+
+    public OptionPanel getOptionPanel() {
+        return optionPanel;
+    }
+
+    public Replan getTask() {
+        return task;
+    }
+
+    public void setTask(Replan task) {
+        this.task = task;
+    }
+
+    public void setCatchmentLayer(Layer catchmentLayer) {
+        this.catchmentLayer = catchmentLayer;
+        catchmentLayerCreated = true;
+    }
+
+    public void setCrossingPointLayer(Layer crossingPointLayer) {
+        this.crossingPointLayer = crossingPointLayer;
+        crossingPointLayerCreated = true;
+    }
+
+    public Layer getCatchmentLayer() {
+        return catchmentLayer;
+    }
+
+    public Layer getCrossingPointLayer() {
+        return crossingPointLayer;
+    }
+
+    public Layer getPodLayer() {
+        return podLayer;
+    }
+
+    public void setPodLayer(Layer podLayer) {
+        this.podLayer = podLayer;
+        podLayerCreated = true;
+    }
+
+    public Layer getRingLayer() {
+        return ringLayer;
+    }
+
+    public void setRingLayer(Layer ringLayer) {
+        this.ringLayer = ringLayer;
+        ringLayerCreated = true;
+    }
+
+    public Layer getCoverageLayer() {
+        return coverageLayer;
+    }
+
+    public void setCoverageLayer(Layer coverageLayer) {
+        this.coverageLayer = coverageLayer;
+        coverageLayerCreated = true;
+    }
+
+    public void settype2VulnLayer(Layer type2VulnLayer) {
+        this.type2VulnLayer = type2VulnLayer;
+        type2VulnLayerCreated = true;
+    }
+
+    public void settype2AllocLayer(Layer type2AllocLayer) {
+        this.type2AllocLayer = type2AllocLayer;
+        type2AllocLayerCreated = true;
+    }
+
+    public int[] getCoverageOptions() {
+        return coverageOptions;
+    }
+
+    public void setCoverageOptions(int coverageOptions[]) {
+        this.coverageOptions = coverageOptions;
+    }
+
+    private void gEarthInit() {
+        locSelector = new LocationSelector(0);
+        REPLAN.getMainFrame().getTabs().getSelectedScenario().getMapPane().setCursorTool(locSelector);
+//        if (!REPLAN.getMainFrame().getTabs().getSelectedScenario().getState().getCatchmentAreasGiven()) {
+//            return;
+//        }
+        locSelector.getSelCoords().addObserver(this);
+    }
+
+     private void catchmentInit() {
+        locSelector = new LocationSelector(2);
+        REPLAN.getMainFrame().getTabs().getSelectedScenario().getMapPane().setCursorTool(locSelector);
+
+        locSelector.getSelCoords().addObserver(this);
+    }
+
+    private void transportationVulnInit() {
+        locSelector = new LocationSelector(1);
+        REPLAN.getMainFrame().getTabs().getSelectedScenario().getMapPane().setCursorTool(locSelector);
+        locSelector.getSelCoords().addObserver(this);
+    }
+    /*
+     public BaseTrafficEstimator getBaseTrafficEstimator()
+     {
+     return baseTraffic;
+     }
+
+     public HashMap getTrafficRoadsList(){
+     return trafficRoadsList;
+     }
+
+     */
+}

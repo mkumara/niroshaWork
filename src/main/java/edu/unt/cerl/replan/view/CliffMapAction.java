@@ -42,7 +42,7 @@ import org.geotools.geometry.Envelope2D;
  *
  *
  * @source $URL$
- * @version $Id$
+ * @version $Id: CliffMapAction.java,v 1.2.2.2 2014-09-21 14:16:29 nirosha Exp $
  */
 public class CliffMapAction extends MapAction {
 
